@@ -40,7 +40,6 @@ async function testAnalyzeSolanaTransaction() {
       "dTLhNajxmKk5XxKhyMMrBhyUQh5EXe2U25iFM7HRxhtV2fdYQmNcbCsbir6FoNjFi8wiQCopGVthkN3oZFftEK7";
 
     console.log("Using transaction signature:", transactionSignature);
-    console.log(JSON.stringify(transaction, null, 2));
 
     const previousTransactions = new Map<
       string,

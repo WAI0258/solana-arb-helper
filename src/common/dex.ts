@@ -1,5 +1,5 @@
 // DEX Program
-interface DexProgram {
+export interface DexProgram {
   address: string;
   type: string;
   description?: string;

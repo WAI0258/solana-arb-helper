@@ -9,7 +9,11 @@ import type {
 import { PoolManager } from "./pool";
 import { SwapParser } from "./swap";
 import { ArbitrageDetector } from "./arbitrage";
-import { getDexNameByProgramId, isDexProgramId } from "../common/dex";
+import {
+  getDexNameByProgramId,
+  getProgramInfo,
+  isDexProgramId,
+} from "../common/dex";
 
 export class TransactionAnalyzer {
   private poolManager: PoolManager;
@@ -49,7 +53,7 @@ export class TransactionAnalyzer {
     const signer = tx.transaction.message.accountKeys.find((key) => key.signer);
 
     // get all token accounts
-    const tokenAccounts = this.getTokenAccountsWithBalanceChanges(tx);
+    // const tokenAccounts = this.getTokenAccountsWithBalanceChanges(tx);
 
     // parse all instructions
     const innerInstructions = tx.meta?.innerInstructions || [];
@@ -64,34 +68,43 @@ export class TransactionAnalyzer {
 
         const programId = subInstruction.programId;
 
-        const swapEvent = this.swapParser.parseSolanaSwapEvent(
-          innerTokenAccounts,
-          poolInfo,
-          j // inner instruction index
-        );
-        if (swapEvent) {
-          swapEvents.push(swapEvent);
-        }
-
         console.log("now instruction: ", j);
         // whether is from a dex program
         if (isDexProgramId(programId.toBase58())) {
+          const dexProgram = getDexNameByProgramId(programId.toBase58());
+          const dexProgramInfo = getProgramInfo(programId.toBase58());
+          const instructionData =
+            "data" in subInstruction
+              ? Buffer.from(subInstruction.data, "hex")
+              : Buffer.from("");
           const accounts =
             "accounts" in subInstruction ? subInstruction.accounts : [];
 
-          // account could be pool
-          const poolCandidates = accounts.filter(
-            (account) =>
-              !tokenAccounts.find((t) => t.addr === account.toBase58())
+          const swapEvent = this.swapParser.parseSolanaSwapEvent(
+            {
+              dexProgram,
+              dexProgramInfo,
+            },
+            instructionData,
+            j // inner instruction index
           );
-          // inner signer token accounts
-          const innerTokenAccounts = tokenAccounts.filter((account) =>
-            accounts.find(
-              (t) =>
-                t.toBase58() === account.addr &&
-                account.owner === signer?.pubkey?.toBase58()
-            )
-          );
+          if (swapEvent) {
+            swapEvents.push(swapEvent);
+          }
+
+          // // (deprecated) account could be pool
+          // const poolCandidates = accounts.filter(
+          //   (account) =>
+          //     !tokenAccounts.find((t) => t.addr === account.toBase58())
+          // );
+          // // inner signer token accounts
+          // const innerTokenAccounts = tokenAccounts.filter((account) =>
+          //   accounts.find(
+          //     (t) =>
+          //       t.toBase58() === account.addr &&
+          //       account.owner === signer?.pubkey?.toBase58()
+          //   )
+          // );
           if (poolCandidates.length > 0) {
             for (const account of poolCandidates) {
               const poolInfo = await this.poolManager.requestTxPoolInfo(
