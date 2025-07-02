@@ -1,6 +1,7 @@
 export interface ExtendedToken {
   address: string;
   decimals: number;
+  programId: string;
   name?: string;
   symbol?: string;
 }
@@ -52,7 +53,7 @@ export interface StandardSwapEvent {
   instructionIndex: number;
 }
 
-// Token Transfer Event
+// Token Transfer
 export interface TokenTransfer {
   token: string;
   from: string;
@@ -69,7 +70,7 @@ export interface TokenBalanceChange {
   mint: string;
   programId: string;
   decimals: number;
-  amount: string;
+  amount: bigint;
 }
 
 // Arbitrage Cycle

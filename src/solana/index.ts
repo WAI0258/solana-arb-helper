@@ -62,78 +62,36 @@ export class SolanaArbHelper {
     }
   }
 
-  /**
-   * 获取 Solana 池子信息
-   */
-  public async requestTxPoolInfo(
-    poolAddress: string
-  ): Promise<ExtendedPoolInfo | null> {
-    return this.poolManager.requestTxPoolInfo(this.connection, poolAddress);
-  }
-
-  /**
-   * 解析 Solana Swap 事件
-   */
-  public parseSolanaSwapEvent(
-    instruction: any,
-    poolInfo: ExtendedPoolInfo,
-    instructionIndex: number
-  ): StandardSwapEvent | null {
-    return this.swapParser.parseSolanaSwapEvent(
-      instruction,
-      poolInfo,
-      instructionIndex
-    );
-  }
-
-  /**
-   * 构建 Solana Swap 图
-   */
   public buildSolanaSwapGraph(
     swapEvents: StandardSwapEvent[]
   ): Map<string, Map<string, EdgeInfo>> {
     return this.arbitrageDetector.buildSolanaSwapGraph(swapEvents);
   }
 
-  /**
-   * 计算 Solana Swap 图的代币变化
-   */
   public calculateSolanaSwapGraphTokenChanges(
     graph: Map<string, Map<string, EdgeInfo>>
   ): Map<string, bigint> {
     return this.arbitrageDetector.calculateSolanaSwapGraphTokenChanges(graph);
   }
 
-  /**
-   * 查找 Solana 套利环
-   */
   public findSolanaArbitrageCycles(
     swapEvents: StandardSwapEvent[]
   ): ArbitrageCycle[] {
     return this.arbitrageDetector.findSolanaArbitrageCycles(swapEvents);
   }
 
-  /**
-   * 验证 Solana Swap 图的代币变化
-   */
   public validateSolanaSwapGraphTokenChanges(
     graph: Map<string, Map<string, EdgeInfo>>
   ): { isValid: boolean; profitToken?: string } {
     return this.arbitrageDetector.validateSolanaSwapGraphTokenChanges(graph);
   }
 
-  /**
-   * 格式化 Solana 代币变化
-   */
   public formatSolanaTokenChanges(
     tokenChanges: Map<string, bigint> | Record<string, string>
   ): Record<string, string> {
     return this.arbitrageDetector.formatSolanaTokenChanges(tokenChanges);
   }
 
-  /**
-   * 获取 Solana 套利信息
-   */
   public getSolanaArbitrageInfo(swapEvents: StandardSwapEvent[]): {
     arbitrageCycles: ArbitrageCycle[];
     isArbitrage: boolean;
@@ -141,9 +99,6 @@ export class SolanaArbHelper {
     return this.arbitrageDetector.getSolanaArbitrageInfo(swapEvents);
   }
 
-  /**
-   * 分析 Solana 交易
-   */
   public async analyzeSolanaTransaction(
     tx: any,
     slot: number,
@@ -166,9 +121,6 @@ export class SolanaArbHelper {
     );
   }
 
-  /**
-   * 分析 Solana 区块
-   */
   public async analyzeSolanaBlock(
     slot: number,
     timestamp: Date,
@@ -183,7 +135,6 @@ export class SolanaArbHelper {
   }
 }
 
-// 导出所有类型
 export type {
   ExtendedPoolInfo,
   StandardSwapEvent,
@@ -196,5 +147,4 @@ export type {
   SolanaBlockAnalysisResult,
 };
 
-// 导出内部类（如果需要）
 export { PoolManager, SwapParser, ArbitrageDetector, TransactionAnalyzer };

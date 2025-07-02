@@ -45,32 +45,17 @@ async function testAnalyzeSolanaTransaction() {
       string,
       { signature: string; slot: number }[]
     >();
-    console.log(previousTransactions);
+    console.log("previousTransactions: ", previousTransactions);
 
     const result = await analyzer.analyzeSolanaTransaction(
       connection,
-      transaction as any, // Type assertion to bypass type checking
+      transaction as any,
       slot,
       previousTransactions
     );
 
     if (result) {
-      console.log("\n================================================\n");
-      console.log("Transaction Analysis Result:");
-      console.log("Signature:", result.signature);
-      console.log("Slot:", result.slot);
-      console.log("From:", result.from);
-      console.log("Fee:", result.fee);
-      console.log("Swap Events Count:", result.swapEvents.length);
-      console.log("Token Changes:", result.tokenChanges);
-
-      if (result.arbitrageInfo) {
-        console.log("Arbitrage Info:");
-        console.log("  Type:", result.arbitrageInfo.type);
-        console.log("  Is Backrun:", result.arbitrageInfo.isBackrun);
-        console.log("  Cycles Length:", result.arbitrageInfo.cyclesLength);
-        console.log("  Profit:", result.arbitrageInfo.profit);
-      }
+      console.log("result: ", result);
     } else {
       console.log("No analysis result returned");
     }
