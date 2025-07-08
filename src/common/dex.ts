@@ -17,6 +17,11 @@ const DEX_PROGRAM_ID = {
       type: "AMM", // https://github.com/raydium-io/raydium-docs/blob/master/dev-resources/raydium-hybrid-amm-dev-doc.pdf
       description: "Raydium Liquidity Pool V4",
     },
+    CPMM: {
+      address: "CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C",
+      type: "CPMM",
+      description: "Raydium CPMM",
+    },
   },
   ORCA: {
     TOKEN_SWAP_V2: {

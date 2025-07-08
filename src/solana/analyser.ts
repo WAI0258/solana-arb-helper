@@ -53,6 +53,12 @@ export class TransactionAnalyzer {
 
     const signer = tx.transaction.message.accountKeys.find((key) => key.signer);
 
+    if (tx.meta.err) {
+      console.log(
+        `Transaction ${tx.transaction.signatures[0]} is failed: ${tx.meta.err}`
+      );
+      return null;
+    }
     // get all token accounts
     const tokenAccounts = this.getTokenAccountsWithBalanceChanges(tx);
 

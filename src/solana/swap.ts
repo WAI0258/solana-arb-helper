@@ -55,6 +55,13 @@ export class SwapParser {
             innerTokenAccountsWithBalanceChanges,
             instructionIndex
           );
+        case "CPMM":
+          return this.parseRaydiumCPMMSwap(
+            instructionData,
+            accounts,
+            innerTokenAccountsWithBalanceChanges,
+            instructionIndex
+          );
         default:
           return null;
       }
@@ -230,6 +237,26 @@ export class SwapParser {
       console.error("Error parsing Raydium AMM swap:", error);
       return null;
     }
+  }
+
+  private parseRaydiumCPMMSwap(
+    instructionData: Buffer,
+    accounts: any[],
+    innerTokenAccountsWithBalanceChanges: any[],
+    instructionIndex: number
+  ): StandardSwapEvent | null {
+    try {
+      // detect the type of swap
+      const discriminator = instructionData.readUInt8(0);
+      const expectedDiscriminator = {
+        swapBaseIn: [143, 190, 90, 218, 196, 30, 51, 222],
+        swapBaseOut: [55, 217, 98, 86, 163, 74, 180, 173],
+      };
+    } catch (error) {
+      console.error("Error parsing Raydium CPMM swap:", error);
+      return null;
+    }
+    return null;
   }
 
   private parseOrcaV2Swap(): StandardSwapEvent | null {
