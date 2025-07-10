@@ -1,15 +1,13 @@
-import { Connection, PublicKey } from "@solana/web3.js";
-// import { Raydium } from "@raydium-io/raydium-sdk-v2";
 import path from "path";
 import fs from "fs";
 
 import type {
   ExtendedPoolInfo,
-  ExtendedToken,
   StandardSwapEvent,
+  TokenBalanceChange,
 } from "../common/types";
-import type { DexProgram } from "../common/dex";
-import { Raydium } from "@raydium-io/raydium-sdk-v2";
+import { getTokenInfo } from "@/utils/tokenList";
+import { type DexProgram } from "@/common/dex";
 
 export class PoolManager {
   private poolCache: { [key: string]: ExtendedPoolInfo } = {};
@@ -45,20 +43,40 @@ export class PoolManager {
   }
 
   public async requestTxPoolInfo(
-    connection: any,
-    dexProgram: string,
-    poolAddress: string
+    dexProgramInfo: DexProgram | null,
+    poolAddress: string,
+    tokenIn: TokenBalanceChange,
+    tokenOut: TokenBalanceChange
   ): Promise<ExtendedPoolInfo | null> {
     const lowerAddress = poolAddress.toLowerCase();
     if (this.poolCache[lowerAddress]) {
       return this.poolCache[lowerAddress];
     }
     try {
-      switch (dexProgram) {
-        case "RAYDIUM":
-          return this.getRaydiumPoolInfo(connection, poolAddress);
-      }
-      return null;
+      const tokenInfoIn = await getTokenInfo(tokenIn.mint);
+      const tokenInfoOut = await getTokenInfo(tokenOut.mint);
+      return {
+        poolId: poolAddress,
+        tokens: [
+          {
+            address: tokenInfoIn?.address || tokenIn.mint,
+            decimals: tokenInfoIn?.decimals || tokenIn.decimals,
+            programId: tokenInfoIn?.programId || tokenIn.programId,
+            symbol: tokenInfoIn?.symbol || "unknown",
+            name: tokenInfoIn?.name || "unknown",
+          },
+          {
+            address: tokenInfoOut?.address || tokenOut.mint,
+            decimals: tokenInfoOut?.decimals || tokenOut.decimals,
+            programId: tokenInfoOut?.programId || tokenOut.programId,
+            symbol: tokenInfoOut?.symbol || "unknown",
+            name: tokenInfoOut?.name || "unknown",
+          },
+        ],
+        factory: dexProgramInfo?.address || "",
+        protocol: dexProgramInfo?.protocol || "",
+        poolType: dexProgramInfo?.type || "",
+      };
     } catch (error) {
       console.error(
         `Error getting Solana pool info for ${poolAddress}:`,
@@ -66,38 +84,5 @@ export class PoolManager {
       );
       return null;
     }
-  }
-
-  private async getRaydiumPoolInfo(
-    connection: any,
-    poolAddress: string
-  ): Promise<ExtendedPoolInfo | null> {
-    const raydium = await Raydium.load({ connection });
-    const poolInfo = await raydium.api.fetchPoolById({ ids: poolAddress });
-    if (poolInfo[0] === null) {
-      return null;
-    }
-    return {
-      poolId: poolAddress,
-      tokens: [
-        {
-          address: poolInfo[0]?.mintA?.address || "",
-          decimals: 0,
-          programId: poolInfo[0]?.mintA?.programId || "",
-          symbol: poolInfo[0]?.mintA?.symbol || "",
-          name: poolInfo[0]?.mintA?.name || "",
-        },
-        {
-          address: poolInfo[0]?.mintB?.address || "",
-          decimals: 0,
-          programId: poolInfo[0]?.mintB?.programId || "",
-          symbol: poolInfo[0]?.mintB?.symbol || "",
-          name: poolInfo[0]?.mintB?.name || "",
-        },
-      ],
-      factory: poolInfo[0]?.rewardDefaultPoolInfos || "",
-      protocol: poolInfo[0]?.programId || "",
-      poolType: poolInfo[0]?.type || "",
-    };
   }
 }

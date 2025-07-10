@@ -23,7 +23,11 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "verbatimModuleSyntax": true,
-    "types": ["node", "bun-types"]
+    "types": ["node", "bun-types"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]

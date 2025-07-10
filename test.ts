@@ -118,14 +118,14 @@ const raydium = await Raydium.load({ connection });
 // });
 // console.log(JSON.stringify(list, null, 2));
 
-// const poolInfo = await raydium.api.fetchPoolById({
-//   ids: "2BDKfBgjC1sokR97YHtexEAx4SuCe1kuvNTDWceEArbb",
-// });
+const poolInfo = await raydium.api.fetchPoolById({
+  ids: "2BDKfBgjC1sokR97YHtexEAx4SuCe1kuvNTDWceEArbb",
+});
 // const poolInfo = await raydium.api.fetchPoolKeysById({
 //   idList: ["2BDKfBgjC1sokR97YHtexEAx4SuCe1kuvNTDWceEArbb"],
 // });
-const poolInfo = await raydium.api.getTokenInfo([
-  "ts3foLrNUMvwdVeit1oNeLWjYk7e4qsn8PqSsqRpump",
-]);
+// const poolInfo = await raydium.api.getTokenInfo([
+//   "ts3foLrNUMvwdVeit1oNeLWjYk7e4qsn8PqSsqRpump",
+// ]);
 console.log(JSON.stringify(poolInfo, null, 2));
 // fetchAllPools();

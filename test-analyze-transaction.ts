@@ -28,16 +28,15 @@ async function testAnalyzeSolanaTransaction() {
     //   return;
     // }
 
+    const transactionSignature =
+      // "dTLhNajxmKk5XxKhyMMrBhyUQh5EXe2U25iFM7HRxhtV2fdYQmNcbCsbir6FoNjFi8wiQCopGVthkN3oZFftEK7";
+      "3NZt3syTpsY74Dq8Y5sMn2v9k9qsqJSchVM25eB8ULD6SrHNxQGMtAEXSV8T5FWZjP5ojo65BJPtSPgNLSZGiB7r";
     const transaction = await connection.getParsedTransaction(
-      "dTLhNajxmKk5XxKhyMMrBhyUQh5EXe2U25iFM7HRxhtV2fdYQmNcbCsbir6FoNjFi8wiQCopGVthkN3oZFftEK7",
+      transactionSignature,
       {
         maxSupportedTransactionVersion: 0,
       }
     );
-
-    // const transactionSignature = transaction.transaction.signatures[0];
-    const transactionSignature =
-      "dTLhNajxmKk5XxKhyMMrBhyUQh5EXe2U25iFM7HRxhtV2fdYQmNcbCsbir6FoNjFi8wiQCopGVthkN3oZFftEK7";
 
     console.log("Using transaction signature:", transactionSignature);
 

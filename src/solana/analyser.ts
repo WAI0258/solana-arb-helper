@@ -15,7 +15,7 @@ import {
   getProgramInfo,
   isDexProgramId,
 } from "../common/dex";
-import { Raydium } from "@raydium-io/raydium-sdk-v2";
+import { getTokenInfo } from "@/utils/tokenList";
 
 export class TransactionAnalyzer {
   private poolManager: PoolManager;
@@ -110,14 +110,20 @@ export class TransactionAnalyzer {
           //   (account) =>
           //     !tokenAccounts.find((t) => t.addr === account.toBase58())
           // );
-
           const poolAddress = swapEvent?.poolAddress;
 
           if (poolAddress) {
+            const tokenIn = innerTokenAccountsWithBalanceChanges.find(
+              (account) => account.mint === swapEvent.tokenIn
+            );
+            const tokenOut = innerTokenAccountsWithBalanceChanges.find(
+              (account) => account.mint === swapEvent.tokenOut
+            );
             const poolInfo = await this.poolManager.requestTxPoolInfo(
-              connection,
-              dexProgram,
-              poolAddress
+              dexProgramInfo,
+              poolAddress,
+              tokenIn!,
+              tokenOut!
             );
             if (poolInfo) {
               involvedPools.add(poolAddress);

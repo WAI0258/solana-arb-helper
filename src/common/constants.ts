@@ -16,16 +16,6 @@ export const SPL_TOKEN_PROGRAM_ID = {
   TOKEN_2022_PROGRAM: "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
 };
 
-export const SOLANA_EVENT_TOPICS = {
-  RAYDIUM_V4_SWAP: "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8",
-  ORCA_V2_SWAP: "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc",
-  SERUM_V3_SWAP: "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
-  SABER_SWAP: "CJsLwbP1iu5DuUikHEJnLfANgKy6stB2uFgvBBHoyxwz",
-  ALDRIN_V2_SWAP: "AMM55ShdkoGRB5jVYPxWJMUwxhUYQ6uVx4yB8VqHqGq",
-  MERCURIAL_SWAP: "MERt85qc5XS3pSHgYWxYrQmQn1HyMz4EafVjq4jdaKw",
-  JUPITER_SWAP: "JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB",
-} as const;
-
 export const SOLANA_RPC_ENDPOINTS = {
   MAINNET: "https://api.mainnet-beta.solana.com",
   DEVNET: "https://api.devnet.solana.com",
