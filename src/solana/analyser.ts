@@ -266,6 +266,95 @@ export class TransactionAnalyzer {
     }
   }
 
+  public async analyzeSolanaSlotRange(
+    connection: any,
+    startSlot: number,
+    endSlot: number,
+    onProgress?: (currentSlot: number, totalSlots: number) => void
+  ): Promise<SolanaBlockAnalysisResult[]> {
+    const results: SolanaBlockAnalysisResult[] = [];
+    const totalSlots = endSlot - startSlot + 1;
+
+    console.log(
+      `Analyzing slots from ${startSlot} to ${endSlot} (${totalSlots} slots)`
+    );
+
+    for (let slot = startSlot; slot <= endSlot; slot++) {
+      try {
+        const block = await connection.getBlock(slot, {
+          maxSupportedTransactionVersion: 0,
+          transactionDetails: "full",
+          rewards: false,
+        });
+
+        if (block && block.transactions) {
+          const timestamp = new Date(block.blockTime! * 1000);
+          const result = await this.analyzeSolanaBlock(
+            connection,
+            slot,
+            timestamp,
+            block.transactions as any[]
+          );
+
+          if (result) {
+            results.push(result);
+            console.log(
+              `✔ Analyzed slot ${slot} (${results.length}/${totalSlots})`
+            );
+          } else {
+            console.log(`✘ Failed to analyze slot ${slot}`);
+          }
+        } else {
+          console.log(`✘ No data for slot ${slot}`);
+        }
+
+        if (onProgress) {
+          onProgress(slot - startSlot + 1, totalSlots);
+        }
+      } catch (error) {
+        console.error(`Error analyzing slot ${slot}:`, error);
+      }
+    }
+
+    console.log(
+      `Analysis completed. Processed ${results.length}/${totalSlots} slots`
+    );
+    return results;
+  }
+
+  public async analyzeSolanaDateRange(
+    connection: any,
+    startDate: Date,
+    endDate: Date,
+    onProgress?: (currentSlot: number, totalSlots: number) => void
+  ): Promise<SolanaBlockAnalysisResult[]> {
+    // estimate slot range
+    const currentSlot = await connection.getSlot();
+    const slotsPerSecond = 2.5;
+    const startTime = startDate.getTime();
+    const endTime = endDate.getTime();
+    const currentTime = Date.now();
+
+    const timeDiff = currentTime - startTime;
+    const estimatedStartSlot =
+      currentSlot - Math.floor((timeDiff / 1000) * slotsPerSecond);
+
+    const timeDiffEnd = currentTime - endTime;
+    const estimatedEndSlot =
+      currentSlot - Math.floor((timeDiffEnd / 1000) * slotsPerSecond);
+
+    console.log(
+      `Estimated slot range: ${estimatedStartSlot} to ${estimatedEndSlot}`
+    );
+
+    return this.analyzeSolanaSlotRange(
+      connection,
+      estimatedStartSlot,
+      estimatedEndSlot,
+      onProgress
+    );
+  }
+
   private getTokenAccountsWithBalanceChanges(
     tx: ParsedTransactionWithMeta
   ): TokenBalanceChange[] {
