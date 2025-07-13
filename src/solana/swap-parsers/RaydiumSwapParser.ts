@@ -105,13 +105,35 @@ export class RaydiumSwapParser {
         return null;
       }
 
+      const authority = accounts[2]; // pool payer
+      const user = accounts[accounts.length - 1]; // user token account(may be one of them)
+
+      // customize account mapping
+      const poolTokenAccount = innerTokenAccounts.filter(
+        (account) => account.owner === authority.toBase58()
+      );
+      const inputPoolTokenAccount = poolTokenAccount.find((account) =>
+        type === "SWAP_BASE_IN" ? account.amount < 0 : account.amount > 0
+      );
+      const outputPoolTokenAccount = poolTokenAccount.find((account) =>
+        type === "SWAP_BASE_IN" ? account.amount > 0 : account.amount < 0
+      );
+
       const {
         poolAddress,
         inputTokenAccount,
         outputTokenAccount,
         inputVault,
         outputVault,
-      } = extractAccountInfo(accounts, [1, 14, 15, 4, 5]);
+      } = {
+        poolAddress: accounts[1].toBase58(),
+        inputTokenAccount: innerTokenAccounts.find(
+          (account) => account.owner === user.toBase58()
+        )?.addr,
+        outputTokenAccount: accounts[accounts.length - 2].toBase58(),
+        inputVault: inputPoolTokenAccount?.addr,
+        outputVault: outputPoolTokenAccount?.addr,
+      };
 
       const { tokenIn, tokenOut } = this.getAMMTokenMapping(
         type,
@@ -201,7 +223,6 @@ export class RaydiumSwapParser {
   ) {
     let tokenIn: any;
     let tokenOut: any;
-
     if (type === "SWAP_BASE_IN") {
       tokenIn = innerTokenAccounts.find(
         (account) => account.addr === outputVault

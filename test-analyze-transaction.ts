@@ -1,5 +1,6 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import { TransactionAnalyzer } from "./src/solana/analyser";
+import { isDexProgramId } from "./src/common/dex";
 
 async function testAnalyzeSolanaTransaction() {
   const rpcUrl = "https://api.mainnet-beta.solana.com";
@@ -29,25 +30,25 @@ async function testAnalyzeSolanaTransaction() {
     // }
 
     const transactionSignature =
-      // "dTLhNajxmKk5XxKhyMMrBhyUQh5EXe2U25iFM7HRxhtV2fdYQmNcbCsbir6FoNjFi8wiQCopGVthkN3oZFftEK7";
-      "3NZt3syTpsY74Dq8Y5sMn2v9k9qsqJSchVM25eB8ULD6SrHNxQGMtAEXSV8T5FWZjP5ojo65BJPtSPgNLSZGiB7r";
-    const transaction = await connection.getParsedTransaction(
-      transactionSignature,
-      {
-        maxSupportedTransactionVersion: 0,
-      }
-    );
-
-    console.log("Using transaction signature:", transactionSignature);
+      "dTLhNajxmKk5XxKhyMMrBhyUQh5EXe2U25iFM7HRxhtV2fdYQmNcbCsbir6FoNjFi8wiQCopGVthkN3oZFftEK7";
+    // "3NZt3syTpsY74Dq8Y5sMn2v9k9qsqJSchVM25eB8ULD6SrHNxQGMtAEXSV8T5FWZjP5ojo65BJPtSPgNLSZGiB7r";
+    // const transaction = await connection.getParsedTransaction(
+    //   transactionSignature,
+    //   {
+    //     maxSupportedTransactionVersion: 0,
+    //   }
+    // );
+    const transaction = await connection.getTransaction(transactionSignature, {
+      maxSupportedTransactionVersion: 0,
+    });
+    // console.log("transaction: ", JSON.stringify(transaction, null, 2));
 
     const previousTransactions = new Map<
       string,
       { signature: string; slot: number }[]
     >();
-    console.log("previousTransactions: ", previousTransactions);
 
     const result = await analyzer.analyzeSolanaTransaction(
-      connection,
       transaction as any,
       slot,
       previousTransactions

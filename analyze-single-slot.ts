@@ -1,61 +1,85 @@
-import { Connection } from "@solana/web3.js";
-import { TransactionAnalyzer } from "./src/solana/analyser";
+import { BatchAnalyzer } from "./src/solana/data-processor/batch";
+import path from "path";
 
 async function analyzeSingleSlot() {
-  const connection = new Connection(
-    "https://api.mainnet-beta.solana.com",
-    "confirmed"
-  );
-  const analyzer = new TransactionAnalyzer();
+  const config = {
+    startDate: new Date("2025-01-01T00:00:00Z"),
+    endDate: new Date("2025-01-01T23:59:59Z"),
+    rpcUrl: "https://api.mainnet-beta.solana.com",
+    outputDir: path.resolve("./analysis-results"),
+    saveInterval: 1,
+  };
 
-  // 分析单个slot
-  const slot = 123456789; // 替换为实际的slot
+  console.log("Starting single slot analysis using BatchAnalyzer...");
+  const slot = 349679151;
+
+  const analyzer = new BatchAnalyzer(config);
 
   try {
     console.log(`Analyzing slot ${slot}...`);
 
-    const results = await analyzer.analyzeSolanaSlotRange(
-      connection,
-      slot,
-      slot, // 只分析一个slot
-      (current, total) => {
-        console.log(`Progress: ${current}/${total}`);
-      }
+    const result = await analyzer.analyzeSlotRange(slot, slot);
+
+    console.log("\n=== Analysis Summary ===");
+    console.log(`Slot: ${result.startSlot}`);
+    console.log(`Total Blocks: ${result.totalBlocks}`);
+    console.log(`Processed Blocks: ${result.processedBlocks}`);
+    console.log(`Failed Blocks: ${result.failedBlocks}`);
+    console.log(`Total Transactions: ${result.totalTransactions}`);
+    console.log(`Arbitrage Transactions: ${result.arbitrageTransactions}`);
+    console.log(
+      `Arbitrage Rate: ${(
+        (result.arbitrageTransactions / result.totalTransactions) *
+        100
+      ).toFixed(2)}%`
     );
 
-    if (results.length > 0) {
-      const result = results[0];
-      if (result) {
-        console.log(`\n=== Slot ${slot} Analysis ===`);
-        console.log(`Timestamp: ${result.timestamp}`);
-        console.log(`Total Transactions: ${result.transactions.length}`);
+    if (result.arbitrageTransactions > 0) {
+      console.log("\n=== Arbitrage Details ===");
+      const arbitrageTxs = result.results.flatMap((block) =>
+        block.transactions.filter((tx) => tx.arbitrageInfo)
+      );
 
-        const arbitrageTxs = result.transactions.filter(
-          (tx) => tx.arbitrageInfo
+      arbitrageTxs.forEach((tx, index) => {
+        console.log(`\nArbitrage ${index + 1}:`);
+        console.log(`  Signature: ${tx.signature}`);
+        console.log(`  Type: ${tx.arbitrageInfo?.type}`);
+        console.log(`  Profit Token: ${tx.arbitrageInfo?.profit?.token}`);
+        console.log(`  Profit Amount: ${tx.arbitrageInfo?.profit?.amount}`);
+        console.log(
+          `  Protocols: ${tx.swapEvents.map((e) => e.protocol).join(", ")}`
         );
-        console.log(`Arbitrage Transactions: ${arbitrageTxs.length}`);
+      });
+      const protocolStats = new Map<string, number>();
+      arbitrageTxs.forEach((tx) => {
+        tx.swapEvents.forEach((event) => {
+          const protocol = event.protocol;
+          protocolStats.set(protocol, (protocolStats.get(protocol) || 0) + 1);
+        });
+      });
 
-        if (arbitrageTxs.length > 0) {
-          console.log("\n=== Arbitrage Details ===");
-          arbitrageTxs.forEach((tx, index) => {
-            console.log(`\nArbitrage ${index + 1}:`);
-            console.log(`  Signature: ${tx.signature}`);
-            console.log(`  Type: ${tx.arbitrageInfo?.type}`);
-            console.log(`  Profit Token: ${tx.arbitrageInfo?.profit?.token}`);
-            console.log(`  Profit Amount: ${tx.arbitrageInfo?.profit?.amount}`);
-            console.log(
-              `  Protocols: ${tx.swapEvents.map((e) => e.protocol).join(", ")}`
-            );
-          });
-        }
+      console.log("\nArbitrage by Protocol:");
+      for (const [protocol, count] of protocolStats) {
+        console.log(`  ${protocol}: ${count}`);
       }
-    } else {
-      console.log("No data found for this slot");
+
+      // 利润代币统计
+      const profitTokenStats = new Map<string, number>();
+      arbitrageTxs.forEach((tx) => {
+        if (tx.arbitrageInfo?.profit?.token) {
+          const token = tx.arbitrageInfo.profit.token;
+          profitTokenStats.set(token, (profitTokenStats.get(token) || 0) + 1);
+        }
+      });
+
+      console.log("\nArbitrage by Profit Token:");
+      for (const [token, count] of profitTokenStats) {
+        console.log(`  ${token}: ${count}`);
+      }
     }
   } catch (error) {
-    console.error("Error analyzing slot:", error);
+    console.error("Error during analysis:", error);
   }
 }
 
-// 运行分析
 analyzeSingleSlot().catch(console.error);

@@ -22,9 +22,5 @@ export const SOLANA_RPC_ENDPOINTS = {
   LOCALNET: "http://localhost:8899",
 } as const;
 
-// Cache Config
-export const CACHE_CONFIG = {
-  POOL_CACHE_TTL: 24 * 60 * 60 * 1000,
-  TOKEN_CACHE_TTL: 7 * 24 * 60 * 60 * 1000,
-  MAX_CACHE_SIZE: 10000,
-} as const;
+export const SOLANA_GENESIS_TIME = "2021-09-11T13:27:44Z";
+export const SOLANA_SLOT_DURATION_MS = 400;
