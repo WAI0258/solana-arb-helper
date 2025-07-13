@@ -1,6 +1,4 @@
 import { Connection } from "@solana/web3.js";
-import path from "path";
-import fs from "fs";
 
 import type {
   ExtendedPoolInfo,
@@ -18,6 +16,7 @@ import { PoolManager } from "./pool";
 import { SwapParser } from "./swap";
 import { ArbitrageDetector } from "./arbitrage";
 import { TransactionAnalyzer } from "./analyser";
+import { TokenCacheManager } from "../cache/token";
 
 export class SolanaArbHelper {
   public readonly connection: Connection;
@@ -25,11 +24,6 @@ export class SolanaArbHelper {
   private swapParser: SwapParser;
   private arbitrageDetector: ArbitrageDetector;
   private transactionAnalyzer: TransactionAnalyzer;
-  private tokenCache: { [key: string]: any } = {};
-  private readonly TOKEN_CACHE_FILE = path.join(
-    __dirname,
-    "../../data/solana_token_cache.json"
-  );
 
   constructor(rpcUrl: string) {
     this.connection = new Connection(rpcUrl, "confirmed");
@@ -37,29 +31,6 @@ export class SolanaArbHelper {
     this.swapParser = new SwapParser();
     this.arbitrageDetector = new ArbitrageDetector();
     this.transactionAnalyzer = new TransactionAnalyzer();
-    this.loadTokenCache();
-  }
-
-  private loadTokenCache() {
-    try {
-      if (fs.existsSync(this.TOKEN_CACHE_FILE)) {
-        const data = fs.readFileSync(this.TOKEN_CACHE_FILE, "utf-8");
-        this.tokenCache = JSON.parse(data);
-      }
-    } catch (error) {
-      console.error("Error loading Solana token cache:", error);
-    }
-  }
-
-  private saveTokenCache() {
-    try {
-      fs.writeFileSync(
-        this.TOKEN_CACHE_FILE,
-        JSON.stringify(this.tokenCache, null, 2)
-      );
-    } catch (error) {
-      console.error("Error saving Solana token cache:", error);
-    }
   }
 
   public buildSolanaSwapGraph(
@@ -114,7 +85,6 @@ export class SolanaArbHelper {
     addressTokenChanges: Record<string, TokenBalanceChange[]>;
   } | null> {
     return this.transactionAnalyzer.analyzeSolanaTransaction(
-      this.connection,
       tx,
       slot,
       previousTransactions
@@ -127,11 +97,14 @@ export class SolanaArbHelper {
     transactions: any[]
   ): Promise<SolanaBlockAnalysisResult | null> {
     return this.transactionAnalyzer.analyzeSolanaBlock(
-      this.connection,
       slot,
       timestamp,
       transactions
     );
+  }
+
+  public getTokenCacheSize(): number {
+    return TokenCacheManager.getCacheSize();
   }
 }
 
