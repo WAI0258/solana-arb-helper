@@ -15,6 +15,13 @@ export class RaydiumSwapParser {
     dexType?: string
   ): StandardSwapEvent | null {
     switch (dexType) {
+      case "CURVE":
+        return this.parseCurveSwap(
+          instructionData,
+          accounts,
+          innerTokenAccounts,
+          instructionIndex
+        );
       case "CLMM":
         return this.parseCLMMSwap(
           instructionData,
@@ -38,6 +45,71 @@ export class RaydiumSwapParser {
         );
       default:
         return null;
+    }
+  }
+
+  private parseCurveSwap(
+    instructionData: Buffer,
+    accounts: any[],
+    innerTokenAccounts: any[],
+    instructionIndex: number
+  ): StandardSwapEvent | null {
+    try {
+      const discriminator = instructionData.readUInt8(0);
+      if (discriminator.toString() !== "9") return null;
+
+      const authority = accounts[2]; // pool payer
+      const user = accounts[accounts.length - 1]; // user token account(may be one of them)
+      const userTokenAccounts = innerTokenAccounts.filter(
+        (account) => account.owner === user.toBase58()
+      );
+      // customize account mapping
+      const poolTokenAccount = innerTokenAccounts.filter(
+        (account) => account.owner === authority.toBase58()
+      );
+      const inputPoolTokenAccount = poolTokenAccount.find(
+        (account) => account.amount < 0
+      );
+      const outputPoolTokenAccount = poolTokenAccount.find(
+        (account) => account.amount > 0
+      );
+      const {
+        poolAddress,
+        inputTokenAccount,
+        outputTokenAccount,
+        inputVault,
+        outputVault,
+      } = {
+        poolAddress: accounts[1].toBase58(),
+        inputTokenAccount: userTokenAccounts.filter(
+          (account) => account.addr !== accounts[accounts.length - 2].toBase58()
+        )[0]?.addr,
+        outputTokenAccount: accounts[accounts.length - 2].toBase58(),
+        inputVault: inputPoolTokenAccount?.addr,
+        outputVault: outputPoolTokenAccount?.addr,
+      };
+
+      const { tokenIn, tokenOut } = this.getAMMTokenMapping(
+        "SWAP_BASE_IN",
+        inputVault,
+        outputVault,
+        innerTokenAccounts
+      );
+
+      return {
+        poolAddress,
+        protocol: "RAYDIUM_CURVE_SWAP",
+        tokenIn: tokenIn?.mint,
+        tokenOut: tokenOut?.mint,
+        amountIn: getAbsoluteAmount(tokenIn?.amount),
+        amountOut: getAbsoluteAmount(tokenOut?.amount),
+        sender: inputTokenAccount,
+        recipient: outputTokenAccount,
+        instructionIndex,
+      };
+    } catch (error) {
+      console.error("Error parsing Raydium Curve swap:", error);
+      return null;
     }
   }
 
@@ -107,6 +179,9 @@ export class RaydiumSwapParser {
 
       const authority = accounts[2]; // pool payer
       const user = accounts[accounts.length - 1]; // user token account(may be one of them)
+      const userTokenAccounts = innerTokenAccounts.filter(
+        (account) => account.owner === user.toBase58()
+      );
 
       // customize account mapping
       const poolTokenAccount = innerTokenAccounts.filter(
@@ -127,9 +202,9 @@ export class RaydiumSwapParser {
         outputVault,
       } = {
         poolAddress: accounts[1].toBase58(),
-        inputTokenAccount: innerTokenAccounts.find(
-          (account) => account.owner === user.toBase58()
-        )?.addr,
+        inputTokenAccount: userTokenAccounts.filter(
+          (account) => account.addr !== accounts[accounts.length - 2].toBase58()
+        )[0]?.addr,
         outputTokenAccount: accounts[accounts.length - 2].toBase58(),
         inputVault: inputPoolTokenAccount?.addr,
         outputVault: outputPoolTokenAccount?.addr,

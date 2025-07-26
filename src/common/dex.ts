@@ -7,6 +7,11 @@ export interface DexProgram {
 
 const DEX_PROGRAM_ID = {
   RAYDIUM: {
+    STABLE_SWAP_AMM: {
+      address: "5quBtoiQqxF9Jv6KYKctB59NT3gtJD2Y65kdnB1Uev3h",
+      type: "CURVE",
+      protocol: "Raydium Stable Swap AMM",
+    },
     CONCENTRATED_LIQUIDITY: {
       address: "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",
       type: "CLMM", // https://github.com/raydium-io/raydium-docs/blob/master/dev-resources/raydium-clmm-dev-doc.pdf
@@ -24,10 +29,20 @@ const DEX_PROGRAM_ID = {
     },
   },
   ORCA: {
-    TOKEN_SWAP_V2: {
+    SWAP_V1: {
+      address: "DjVE6JNiYqPL2QXyCUUh8rNjHrbz9hXHNYt99MQ59qw1",
+      type: "CPMM_V1",
+      protocol: "Orca Swap V1",
+    },
+    SWAP_V2: {
       address: "9W959DqEETiGZocYWCQPaJ6sBmUzgfxXfqGeTEdp3aQP",
-      type: "TOKEN_SWAP",
-      protocol: "Orca Token Swap V2",
+      type: "CPMM_V2",
+      protocol: "Orca Swap V2",
+    },
+    WHIRLPOOL: {
+      address: "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc",
+      type: "CLMM",
+      protocol: "Orca Whirlpool",
     },
   },
   SERUM: {
