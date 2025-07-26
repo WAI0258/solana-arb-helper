@@ -86,11 +86,10 @@ const DEX_PROGRAM_ID = {
       type: "DLMM",
       protocol: "Meteora DLMM",
     },
-    // todo
     DAMM: {
       address: "Eo7WjKq67rjJQSZxS6z3YkapzY3eMj6Xy8X5EQVn5UaB",
       type: "DAMM",
-      protocol: "Meteora DAMM",
+      protocol: "Meteora DAMM / Pool Program",
     },
     DAMM_V2: {
       address: "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
@@ -98,6 +97,7 @@ const DEX_PROGRAM_ID = {
       protocol: "Meteora DAMM V2",
     },
     DBC: {
+      // basiclly no arb
       address: "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
       type: "DynamicBondingCurve",
       protocol: "Meteora Dynamic Bonding Curve",
