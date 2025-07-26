@@ -14,14 +14,6 @@ export interface ExtendedPoolInfo {
   poolType: string;
 }
 
-export interface ExtendedMarketInfo {
-  marketId: string;
-  tokens: string[];
-  factory: string; // same as programId
-  protocol: string;
-  marketType: string;
-}
-
 // Cycle Edge
 export interface CycleEdge {
   tokenIn: string;
@@ -98,18 +90,15 @@ export interface ArbitrageInfo {
   }>;
 }
 
-// Block Analysis Result
+// Solana Block Analysis Result
 export interface BlockAnalysisResult {
-  blockNumber: number;
+  slot: number;
   timestamp: Date;
   transactions: Array<{
-    hash: string;
-    index: number;
-    from: string;
-    to?: string;
-    gasPrice: string;
-    gasUsed: string;
-    input: string;
+    signature: string;
+    slot: number;
+    signer: string;
+    fee: number;
     arbitrageInfo?: ArbitrageInfo;
     swapEvents: StandardSwapEvent[];
     tokenChanges: Record<string, string>;
@@ -117,18 +106,45 @@ export interface BlockAnalysisResult {
   }>;
 }
 
-// Solana Block Analysis Result
-export interface SolanaBlockAnalysisResult {
-  slot: number;
-  timestamp: Date;
-  transactions: Array<{
-    signature: string;
-    slot: number;
-    from: string;
-    fee: number;
-    arbitrageInfo?: ArbitrageInfo;
-    swapEvents: StandardSwapEvent[];
-    tokenChanges: Record<string, string>;
-    addressTokenChanges: Record<string, TokenBalanceChange[]>;
-  }>;
+export interface BatchAnalysisResult {
+  totalBlocks: number;
+  processedBlocks: number;
+  failedBlocks: number;
+  arbitrageTransactions: number;
+  totalTransactions: number;
+  startSlot: number;
+  endSlot: number;
+  startDate: Date;
+  endDate: Date;
+  results: BlockAnalysisResult[];
+  statistics: {
+    totalProfit: string;
+    protocolStats: Record<string, number>;
+    profitTokenStats: Record<string, number>;
+    arbitrageTypeStats: Record<string, number>;
+    arbitrageTransactionsAddress: Record<string, string>;
+  };
+}
+
+export interface ProgressState {
+  currentSlot: number;
+  processedSlots: number[];
+  totalSlots: number;
+  startSlot: number;
+  endSlot: number;
+  lastSaveTime: string;
+}
+
+export interface AnalysisSummary {
+  slotRange: string;
+  dateRange: string;
+  totalBlocks: number;
+  arbitrageTransactions: number;
+  arbitrageTransactionsByAddress: Record<string, string>;
+  totalTransactions: number;
+  totalProfit: string;
+  protocols: string[];
+  profitTokens: string[];
+  createdAt: string;
+  filePath: string;
 }

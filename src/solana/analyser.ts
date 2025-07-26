@@ -10,7 +10,7 @@ import type {
   CycleEdge,
   ArbitrageCycle,
   ArbitrageInfo,
-  SolanaBlockAnalysisResult,
+  BlockAnalysisResult,
 } from "../common/types";
 
 import { PoolManager } from "./pool";
@@ -46,7 +46,7 @@ export class TransactionAnalyzer {
   ): Promise<{
     signature: string;
     slot: number;
-    from: string;
+    signer: string;
     fee: number;
     arbitrageInfo?: ArbitrageInfo;
     swapEvents: StandardSwapEvent[];
@@ -182,7 +182,7 @@ export class TransactionAnalyzer {
         return {
           signature: tx.transaction.signatures[0] || "",
           slot,
-          from: firstAccountKey
+          signer: firstAccountKey
             ? this.accountProcessor.getAccountAddress(firstAccountKey)
             : "",
           fee: tx.meta?.fee || 0,
@@ -209,7 +209,7 @@ export class TransactionAnalyzer {
     return {
       signature: tx.transaction.signatures[0] || "",
       slot,
-      from: firstAccountKey
+      signer: firstAccountKey
         ? this.accountProcessor.getAccountAddress(firstAccountKey)
         : "",
       fee: tx.meta?.fee || 0,
@@ -223,7 +223,7 @@ export class TransactionAnalyzer {
     slot: number,
     timestamp: Date,
     transactions: ParsedTransactionWithMeta[]
-  ): Promise<SolanaBlockAnalysisResult | null> {
+  ): Promise<BlockAnalysisResult | null> {
     try {
       const poolTransactionHistory = new Map<
         string,
@@ -278,8 +278,8 @@ export class TransactionAnalyzer {
     startSlot: number,
     endSlot: number,
     onProgress?: (currentSlot: number, totalSlots: number) => void
-  ): Promise<SolanaBlockAnalysisResult[]> {
-    const results: SolanaBlockAnalysisResult[] = [];
+  ): Promise<BlockAnalysisResult[]> {
+    const results: BlockAnalysisResult[] = [];
     const totalSlots = endSlot - startSlot + 1;
 
     console.log(

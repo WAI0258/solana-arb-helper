@@ -2,7 +2,12 @@ import { Connection } from "@solana/web3.js";
 import fs from "fs";
 import path from "path";
 
-import type { SolanaBlockAnalysisResult } from "../../common/types";
+import type {
+  BlockAnalysisResult,
+  BatchAnalysisResult,
+  AnalysisSummary,
+  ProgressState,
+} from "../../common/types";
 import { TransactionAnalyzer } from "../analyser";
 import { SolanaArbHelper } from "../index";
 import { FileUtils } from "./file";
@@ -19,53 +24,9 @@ export interface BatchAnalysisConfig {
   saveInterval: number;
 }
 
-export interface BatchAnalysisResult {
-  totalBlocks: number;
-  processedBlocks: number;
-  failedBlocks: number;
-  arbitrageTransactions: number;
-  totalTransactions: number;
-  startSlot: number;
-  endSlot: number;
-  startDate: Date;
-  endDate: Date;
-  results: SolanaBlockAnalysisResult[];
-  statistics: {
-    totalProfit: string;
-    averageProfitPerArbitrage: string;
-    protocolStats: Record<string, number>;
-    profitTokenStats: Record<string, number>;
-    arbitrageTypeStats: Record<string, number>;
-  };
-}
-
-export interface ProgressState {
-  currentSlot: number;
-  processedSlots: number[];
-  totalSlots: number;
-  startSlot: number;
-  endSlot: number;
-  lastSaveTime: string;
-}
-
-export interface AnalysisSummary {
-  slotRange: string;
-  dateRange: string;
-  totalBlocks: number;
-  arbitrageTransactions: number;
-  totalTransactions: number;
-  totalProfit: string;
-  averageProfit: string;
-  protocols: string[];
-  profitTokens: string[];
-  createdAt: string;
-  filePath: string;
-}
-
 export class BatchAnalyzer {
   private connection: Connection;
   private analyzer: TransactionAnalyzer;
-  private arbHelper: SolanaArbHelper;
   private config: BatchAnalysisConfig;
   private progressFile: string;
   private summaryFile: string;
@@ -73,7 +34,6 @@ export class BatchAnalyzer {
   constructor(config: BatchAnalysisConfig) {
     this.connection = new Connection(config.rpcUrl, "confirmed");
     this.analyzer = new TransactionAnalyzer();
-    this.arbHelper = new SolanaArbHelper(config.rpcUrl);
     this.config = config;
     this.progressFile = path.join(config.outputDir, "progress.json");
     this.summaryFile = path.join(config.outputDir, "analysis_summary.json");
@@ -118,10 +78,11 @@ export class BatchAnalyzer {
     return existingAnalysis ? existingAnalysis.filePath : null;
   }
 
-  private calculateStatistics(results: SolanaBlockAnalysisResult[]) {
+  private calculateStatistics(results: BlockAnalysisResult[]) {
     const protocolStats: Record<string, number> = {};
     const profitTokenStats: Record<string, number> = {};
     const arbitrageTypeStats: Record<string, number> = {};
+    const arbitrageTransactionsAddress: Record<string, string> = {};
     let totalProfit = 0n;
 
     const totalTransactions = results.reduce(
@@ -154,30 +115,30 @@ export class BatchAnalyzer {
           (arbitrageTypeStats[tx.arbitrageInfo.type] || 0) + 1;
       }
 
-      // total profit
+      // total profit and address profit mapping
       if (tx.arbitrageInfo?.profit?.amount) {
-        totalProfit += BigInt(tx.arbitrageInfo.profit.amount);
+        const profitAmount = BigInt(tx.arbitrageInfo.profit.amount);
+        totalProfit += profitAmount;
+
+        // Map transaction address to profit amount
+        arbitrageTransactionsAddress[tx.signature] =
+          tx.arbitrageInfo.profit.amount;
       }
     });
 
-    const averageProfitPerArbitrage =
-      arbitrageTransactions > 0
-        ? (totalProfit / BigInt(arbitrageTransactions)).toString()
-        : "0";
-
     return {
       totalProfit: totalProfit.toString(),
-      averageProfitPerArbitrage,
       protocolStats,
       profitTokenStats,
       arbitrageTypeStats,
+      arbitrageTransactionsAddress,
       totalTransactions,
       arbitrageTransactions,
     };
   }
 
   private saveResults(
-    results: SolanaBlockAnalysisResult[],
+    results: BlockAnalysisResult[],
     batchResult: BatchAnalysisResult
   ) {
     // check if the analysis already exists
@@ -258,7 +219,8 @@ export class BatchAnalyzer {
       arbitrageTransactions: batchResult.arbitrageTransactions,
       totalTransactions: batchResult.totalTransactions,
       totalProfit: batchResult.statistics.totalProfit,
-      averageProfit: batchResult.statistics.averageProfitPerArbitrage,
+      arbitrageTransactionsByAddress:
+        batchResult.statistics.arbitrageTransactionsAddress,
       protocols: Object.keys(batchResult.statistics.protocolStats),
       profitTokens: Object.keys(batchResult.statistics.profitTokenStats),
       createdAt: new Date().toISOString(),
@@ -354,31 +316,39 @@ export class BatchAnalyzer {
       }
     );
 
-    // calculate statistics
+    // calculate statistics from all results
     const statistics = this.calculateStatistics(results);
 
+    // Filter results to only include arbitrage transactions for return
+    const arbitrageResults = results
+      .map((block) => ({
+        ...block,
+        transactions: block.transactions.filter((tx) => tx.arbitrageInfo),
+      }))
+      .filter((block) => block.transactions.length > 0);
+
     const batchResult: BatchAnalysisResult = {
-      totalBlocks: results.length,
+      totalBlocks: arbitrageResults.length,
       processedBlocks: results.length,
       failedBlocks: 0,
       arbitrageTransactions: statistics.arbitrageTransactions,
       totalTransactions: statistics.totalTransactions,
-      startSlot: results[0]?.slot || 0,
-      endSlot: results[results.length - 1]?.slot || 0,
+      startSlot: arbitrageResults[0]?.slot || 0,
+      endSlot: arbitrageResults[arbitrageResults.length - 1]?.slot || 0,
       startDate: this.config.startDate,
       endDate: this.config.endDate,
-      results,
+      results: arbitrageResults, // Only arbitrage transactions
       statistics: {
         totalProfit: statistics.totalProfit,
-        averageProfitPerArbitrage: statistics.averageProfitPerArbitrage,
         protocolStats: statistics.protocolStats,
         profitTokenStats: statistics.profitTokenStats,
         arbitrageTypeStats: statistics.arbitrageTypeStats,
+        arbitrageTransactionsAddress: statistics.arbitrageTransactionsAddress,
       },
     };
 
-    // save results
-    this.saveResults(results, batchResult);
+    // save results (only arbitrage transactions)
+    this.saveResults(arbitrageResults, batchResult);
 
     // Cache is automatically saved when new pools/tokens are encountered
     console.log("Analysis completed - cache automatically managed");

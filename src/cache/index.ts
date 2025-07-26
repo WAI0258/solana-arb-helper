@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs";
-import type { ExtendedPoolInfo } from "../common/types";
+import type { ExtendedPoolInfo, ExtendedToken } from "../common/types";
 
 const CACHE_CONFIG = {
   POOL_CACHE_FILE: path.join(process.cwd(), "data/solana_pool_cache.json"),
@@ -9,7 +9,7 @@ const CACHE_CONFIG = {
 
 class CacheManager {
   private poolCache: Record<string, ExtendedPoolInfo> = {};
-  private tokenCache: Record<string, any> = {};
+  private tokenCache: Record<string, ExtendedToken> = {};
 
   constructor() {
     this.loadCache();
@@ -62,6 +62,7 @@ class CacheManager {
     }
   }
 
+  // Pool cache methods
   setPool(key: string, data: ExtendedPoolInfo) {
     const lowerKey = key.toLowerCase();
     if (!this.poolCache[lowerKey]) {
@@ -74,16 +75,8 @@ class CacheManager {
     return this.poolCache[key.toLowerCase()] || null;
   }
 
-  setToken(key: string, data: any) {
-    const lowerKey = key.toLowerCase();
-    if (!this.tokenCache[lowerKey]) {
-      this.tokenCache[lowerKey] = data;
-      this.saveCache();
-    }
-  }
-
-  getToken(key: string): any | null {
-    return this.tokenCache[key.toLowerCase()] || null;
+  hasPool(key: string): boolean {
+    return this.poolCache[key.toLowerCase()] !== undefined;
   }
 
   removePool(key: string): void {
@@ -94,6 +87,36 @@ class CacheManager {
     }
   }
 
+  clearPoolCache() {
+    this.poolCache = {};
+    this.saveCache();
+  }
+
+  getPoolCache(): Record<string, ExtendedPoolInfo> {
+    return this.poolCache;
+  }
+
+  getPoolCacheSize(): number {
+    return Object.keys(this.poolCache).length;
+  }
+
+  // Token cache methods
+  setToken(key: string, data: ExtendedToken) {
+    const lowerKey = key.toLowerCase();
+    if (!this.tokenCache[lowerKey]) {
+      this.tokenCache[lowerKey] = data;
+      this.saveCache();
+    }
+  }
+
+  getToken(key: string): ExtendedToken | null {
+    return this.tokenCache[key.toLowerCase()] || null;
+  }
+
+  hasToken(key: string): boolean {
+    return this.tokenCache[key.toLowerCase()] !== undefined;
+  }
+
   removeToken(key: string): void {
     const lowerKey = key.toLowerCase();
     if (this.tokenCache[lowerKey]) {
@@ -102,32 +125,40 @@ class CacheManager {
     }
   }
 
-  clearPoolCache() {
-    this.poolCache = {};
-    this.saveCache();
-  }
-
   clearTokenCache() {
     this.tokenCache = {};
     this.saveCache();
   }
 
-  getPoolCache(): Record<string, ExtendedPoolInfo> {
-    return this.poolCache;
-  }
-
-  getTokenCache(): Record<string, any> {
+  getTokenCache(): Record<string, ExtendedToken> {
     return this.tokenCache;
-  }
-
-  getPoolCacheSize(): number {
-    return Object.keys(this.poolCache).length;
   }
 
   getTokenCacheSize(): number {
     return Object.keys(this.tokenCache).length;
   }
+
+  // Utility methods
+  findBySymbol(symbol: string): ExtendedToken | null {
+    const lowerSymbol = symbol.toLowerCase();
+    for (const tokenInfo of Object.values(this.tokenCache)) {
+      if (tokenInfo.symbol?.toLowerCase() === lowerSymbol) {
+        return tokenInfo;
+      }
+    }
+    return null;
+  }
+
+  findByName(name: string): ExtendedToken | null {
+    const lowerName = name.toLowerCase();
+    for (const tokenInfo of Object.values(this.tokenCache)) {
+      if (tokenInfo.name?.toLowerCase().includes(lowerName)) {
+        return tokenInfo;
+      }
+    }
+    return null;
+  }
 }
 
-export const globalCache = new CacheManager();
+export const cacheManager = new CacheManager();
 export { CACHE_CONFIG };

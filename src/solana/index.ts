@@ -9,14 +9,14 @@ import type {
   CycleEdge,
   ArbitrageCycle,
   ArbitrageInfo,
-  SolanaBlockAnalysisResult,
+  BlockAnalysisResult,
 } from "../common/types";
 
 import { PoolManager } from "./pool";
 import { SwapParser } from "./swap";
 import { ArbitrageDetector } from "./arbitrage";
 import { TransactionAnalyzer } from "./analyser";
-import { TokenCacheManager } from "../cache/token";
+import { cacheManager } from "../cache";
 
 export class SolanaArbHelper {
   public readonly connection: Connection;
@@ -77,7 +77,7 @@ export class SolanaArbHelper {
   ): Promise<{
     signature: string;
     slot: number;
-    from: string;
+    signer: string;
     fee: number;
     arbitrageInfo?: ArbitrageInfo;
     swapEvents: StandardSwapEvent[];
@@ -95,7 +95,7 @@ export class SolanaArbHelper {
     slot: number,
     timestamp: Date,
     transactions: any[]
-  ): Promise<SolanaBlockAnalysisResult | null> {
+  ): Promise<BlockAnalysisResult | null> {
     return this.transactionAnalyzer.analyzeSolanaBlock(
       slot,
       timestamp,
@@ -104,7 +104,7 @@ export class SolanaArbHelper {
   }
 
   public getTokenCacheSize(): number {
-    return TokenCacheManager.getCacheSize();
+    return cacheManager.getTokenCacheSize();
   }
 }
 
@@ -117,7 +117,7 @@ export type {
   CycleEdge,
   ArbitrageCycle,
   ArbitrageInfo,
-  SolanaBlockAnalysisResult,
+  BlockAnalysisResult,
 };
 
 export { PoolManager, SwapParser, ArbitrageDetector, TransactionAnalyzer };

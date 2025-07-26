@@ -1,7 +1,7 @@
 import type { ExtendedPoolInfo, TokenBalanceChange } from "../common/types";
-import { getTokenInfo } from "@/utils/tokenList";
+import { getTokenInfo } from "../utils";
 import { type DexProgram } from "@/common/dex";
-import { PoolCacheManager } from "../cache/pool";
+import { cacheManager } from "../cache";
 
 export class PoolManager {
   public async requestTxPoolInfo(
@@ -11,7 +11,7 @@ export class PoolManager {
     tokenOut: TokenBalanceChange,
     txSignature: string
   ): Promise<ExtendedPoolInfo | null> {
-    const cachedPool = PoolCacheManager.getPool(poolAddress);
+    const cachedPool = cacheManager.getPool(poolAddress);
     if (cachedPool) {
       return cachedPool;
     }
@@ -42,7 +42,7 @@ export class PoolManager {
         poolType: dexProgramInfo?.type || "",
       };
 
-      PoolCacheManager.setPool(poolAddress, poolInfo);
+      cacheManager.setPool(poolAddress, poolInfo);
 
       return poolInfo;
     } catch (error) {

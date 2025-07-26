@@ -2,13 +2,11 @@ import type { DexProgram } from "../common/dex";
 import type { StandardSwapEvent } from "../common/types";
 import { RaydiumSwapParser } from "./swap-parsers/RaydiumSwapParser";
 import { OrcaSwapParser } from "./swap-parsers/OrcaSwapParser";
-import { SerumSwapParser } from "./swap-parsers/SerumSwapParser";
 import { MeteoraSwapParser } from "./swap-parsers/MeteoraSwapParser";
 
 export class SwapParser {
   private raydiumParser = new RaydiumSwapParser();
   private orcaParser = new OrcaSwapParser();
-  private serumParser = new SerumSwapParser();
   private meteoraParser = new MeteoraSwapParser();
   public parseSolanaSwapEvent(
     dexProgram: {
@@ -39,13 +37,8 @@ export class SwapParser {
             dexProgram.dexProgramInfo?.type
           );
         case "serum":
-          return this.serumParser.parseSwap(
-            instructionData,
-            accounts,
-            innerTokenAccounts,
-            instructionIndex,
-            dexProgram.dexProgramInfo?.type
-          );
+          // Serum swap implementation not available
+          return null;
         case "METEORA":
           return this.meteoraParser.parseSwap(
             instructionData,

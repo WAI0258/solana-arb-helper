@@ -1,4 +1,4 @@
-import type { StandardSwapEvent } from "@/common/types";
+import type { StandardSwapEvent } from "../../common/types";
 
 export const isValidDiscriminator = (
   discriminator: number[],
