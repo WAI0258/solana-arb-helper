@@ -45,7 +45,10 @@ async function testAnalyzeSolanaTransaction() {
 
       //meteora
       // "bEESzTQw7L5RaZQAKK2U71f44wjWQQ9mwdFrBE6WuLESLrdZ3UJT2Fubq7ayKoSEwWYib4NKpoeKoHVJ4hHzV9V"; // pool program+dlmm 有趣
-      "4FgSEC8WS49J7QG8u2xyC8SNWPBNrmgiZAKFR5VdTJ8ww2J6HTQs5zeotL7undCt9x1ZTYbq9avPfM854BaKUkqj"; // pool program+damm v2
+      // "4FgSEC8WS49J7QG8u2xyC8SNWPBNrmgiZAKFR5VdTJ8ww2J6HTQs5zeotL7undCt9x1ZTYbq9avPfM854BaKUkqj"; // pool program+damm v2
+
+      //solfi
+      "3nrmL1KmrsPKMZoXxbdMubReLTEWp3948Lbpo1A6SVPCiMMN193LkDTQceV22dmY1UK9LwGm2t3D5bXFVVSygVym";
 
     // const transaction = await connection.getParsedTransaction(
     //   transactionSignature,

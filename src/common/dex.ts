@@ -1,3 +1,5 @@
+import type { PumpFunSwapParser } from "@/solana/swap-parsers/PumpFunSwapParser";
+
 // DEX Program
 export interface DexProgram {
   address: string;
@@ -45,6 +47,47 @@ const DEX_PROGRAM_ID = {
       protocol: "Orca Whirlpool",
     },
   },
+  METEORA: {
+    DLMM: {
+      address: "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",
+      type: "DLMM",
+      protocol: "Meteora DLMM",
+    },
+    DAMM: {
+      address: "Eo7WjKq67rjJQSZxS6z3YkapzY3eMj6Xy8X5EQVn5UaB",
+      type: "DAMM",
+      protocol: "Meteora DAMM / Pool Program",
+    },
+    DAMM_V2: {
+      address: "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
+      type: "DAMM_V2",
+      protocol: "Meteora DAMM V2",
+    },
+    DBC: {
+      address: "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
+      type: "DynamicBondingCurve",
+      protocol: "Meteora Dynamic Bonding Curve",
+    },
+  },
+  PUMPFUN: {
+    PumpFun: {
+      address: "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+      type: "BondingCurve",
+      protocol: "PumpFun Bonding Curve",
+    },
+    AMM: {
+      address: "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA",
+      type: "AMM",
+      protocol: "PumpFun AMM",
+    },
+  },
+  SOLFI: {
+    SOLFI: {
+      address: "SoLFiHG9TfgtdUXUjWAxi3LtvYuFyDLVhBWxdMZxyCe",
+      type: "AMM",
+      protocol: "SolFi AMM",
+    },
+  },
   SERUM: {
     DEX_V3: {
       address: "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
@@ -78,29 +121,6 @@ const DEX_PROGRAM_ID = {
       address: "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
       type: "AGGREGATOR",
       protocol: "Jupiter Aggregator V6",
-    },
-  },
-  METEORA: {
-    DLMM: {
-      address: "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",
-      type: "DLMM",
-      protocol: "Meteora DLMM",
-    },
-    DAMM: {
-      address: "Eo7WjKq67rjJQSZxS6z3YkapzY3eMj6Xy8X5EQVn5UaB",
-      type: "DAMM",
-      protocol: "Meteora DAMM / Pool Program",
-    },
-    DAMM_V2: {
-      address: "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG",
-      type: "DAMM_V2",
-      protocol: "Meteora DAMM V2",
-    },
-    DBC: {
-      // basiclly no arb
-      address: "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN",
-      type: "DynamicBondingCurve",
-      protocol: "Meteora Dynamic Bonding Curve",
     },
   },
 } as const;

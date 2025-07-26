@@ -1,6 +1,5 @@
 import type { StandardSwapEvent } from "../../common/types";
 import {
-  getAbsoluteAmount,
   isValidDiscriminator,
   extractAccountInfo,
   buildSwapEvent,
@@ -190,6 +189,27 @@ export class MeteoraSwapParser {
     innerTokenAccounts: any[],
     instructionIndex: number
   ): StandardSwapEvent | null {
-    return null;
+    const discriminator = Array.from(instructionData.slice(0, 8));
+    const expectedDiscriminator = [248, 198, 158, 145, 225, 117, 135, 200];
+    if (!isValidDiscriminator(discriminator, expectedDiscriminator)) {
+      return null;
+    }
+    const {
+      poolAddress,
+      inputTokenAccount,
+      outputTokenAccount,
+      inputVault,
+      outputVault,
+    } = extractAccountInfo(accounts, [2, 3, 4, 6, 5]);
+    return buildSwapEvent(
+      poolAddress,
+      "METEORA_DBC_SWAP",
+      inputVault,
+      outputVault,
+      inputTokenAccount,
+      outputTokenAccount,
+      innerTokenAccounts,
+      instructionIndex
+    );
   }
 }

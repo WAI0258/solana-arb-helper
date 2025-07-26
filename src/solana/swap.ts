@@ -3,11 +3,13 @@ import type { StandardSwapEvent } from "../common/types";
 import { RaydiumSwapParser } from "./swap-parsers/RaydiumSwapParser";
 import { OrcaSwapParser } from "./swap-parsers/OrcaSwapParser";
 import { MeteoraSwapParser } from "./swap-parsers/MeteoraSwapParser";
+import { SolFiSwapParser } from "./swap-parsers/SolFiSwapParser";
 
 export class SwapParser {
   private raydiumParser = new RaydiumSwapParser();
   private orcaParser = new OrcaSwapParser();
   private meteoraParser = new MeteoraSwapParser();
+  private solfiParser = new SolFiSwapParser();
   public parseSolanaSwapEvent(
     dexProgram: {
       dexProgram: string;
@@ -46,6 +48,13 @@ export class SwapParser {
             innerTokenAccounts,
             instructionIndex,
             dexProgram.dexProgramInfo?.type
+          );
+        case "SOLFI":
+          return this.solfiParser.parseSwap(
+            instructionData,
+            accounts,
+            innerTokenAccounts,
+            instructionIndex
           );
         default:
           return null;
