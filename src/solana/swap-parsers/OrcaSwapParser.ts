@@ -1,5 +1,6 @@
 /*
   According to Solscan and https://docs.sqd.ai/solana-indexing/how-to-start/indexing-orca/
+  https://github.com/subsquid-labs
 */
 import type { StandardSwapEvent } from "../../common/types";
 import {
@@ -90,10 +91,11 @@ export class OrcaSwapParser {
   ): StandardSwapEvent | null {
     try {
       const discriminator = Array.from(instructionData.slice(0, 8));
-      const aToB = instructionData.readUInt8(instructionData.length - 1);
       const expectedDiscriminator = {
         swap: [248, 198, 158, 145, 225, 117, 135, 200],
         two_hop_swap: [195, 96, 237, 108, 68, 162, 219, 230],
+        swap_v2: [43, 4, 237, 11, 26, 201, 30, 98],
+        two_hop_swap_v2: [186, 143, 209, 29, 254, 2, 194, 117],
       };
 
       let type = "";
@@ -105,12 +107,30 @@ export class OrcaSwapParser {
       } else if (
         isValidDiscriminator(discriminator, expectedDiscriminator.swap)
       ) {
+        const aToB = instructionData.readUInt8(instructionData.length - 1);
         type = "ORCA_CLMM_SWAP";
         if (aToB === 1) {
           accountToExtract = [2, 3, 5, 4, 6];
         } else {
           accountToExtract = [2, 5, 3, 6, 4];
         }
+      } else if (
+        isValidDiscriminator(discriminator, expectedDiscriminator.swap_v2)
+      ) {
+        type = "ORCA_CLMM_SWAP_V2";
+        const aToB = instructionData.readUInt8(instructionData.length - 2);
+        if (aToB === 1) {
+          accountToExtract = [4, 7, 9, 8, 10];
+        } else {
+          accountToExtract = [4, 9, 7, 10, 8];
+        }
+      } else if (
+        isValidDiscriminator(
+          discriminator,
+          expectedDiscriminator.two_hop_swap_v2
+        )
+      ) {
+        type = "ORCA_CLMM_TWO_HOP_SWAP_V2";
       } else {
         return null;
       }

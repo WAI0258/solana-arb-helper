@@ -60,10 +60,9 @@ async function analyzeSingleSlot() {
 
       console.log("\nArbitrage by Protocol:");
       for (const [protocol, count] of protocolStats) {
-        console.log(`  ${protocol}: ${count}`);
+        console.log(`  ${protocol}: ${count} times`);
       }
 
-      // 利润代币统计
       const profitTokenStats = new Map<string, number>();
       arbitrageTxs.forEach((tx) => {
         if (tx.arbitrageInfo?.profit?.token) {
@@ -74,7 +73,7 @@ async function analyzeSingleSlot() {
 
       console.log("\nArbitrage by Profit Token:");
       for (const [token, count] of profitTokenStats) {
-        console.log(`  ${token}: ${count}`);
+        console.log(`  ${token}: ${count} times`);
       }
     }
   } catch (error) {

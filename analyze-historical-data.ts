@@ -77,7 +77,7 @@ async function analyzeHistoricalData() {
 
       console.log("Arbitrage by Protocol:");
       for (const [protocol, count] of protocolStats) {
-        console.log(`  ${protocol}: ${count}`);
+        console.log(`  ${protocol}: ${count} times`);
       }
 
       // profit
@@ -91,7 +91,7 @@ async function analyzeHistoricalData() {
 
       console.log("\nArbitrage by Profit Token:");
       for (const [token, count] of profitTokenStats) {
-        console.log(`  ${token}: ${count}`);
+        console.log(`  ${token}: ${count} times`);
       }
     }
   } catch (error) {

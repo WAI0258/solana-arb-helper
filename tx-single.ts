@@ -58,11 +58,13 @@ async function testAnalyzeSolanaTransaction() {
       // lifinity
       // "5vt6tp4UBE64TH5bxTWcrZACcW3g9ruc8Cv2nhzFNfSBFuJs6qD2JRKnjUq7dCT8i857jMnhT25a4MaLtJ4imQWr";
       // "nDDe4HrRnYzNEDFpoCjPhtF4FqHZZ22yDXbufNPTxb7Wi8zdYvtpKNSSwKU31yZRgMZihTnZ7XHzJVXjZg2mJdo";
+      // "uZ6U4SAYMuEnvPcQCFcSf7gmNf5TU13g4fmiNpQN6eKjJrR37VZhEZL71mgwxJbhVTdtzskTDt1ocUQ98PX3HTr";
 
-      "uZ6U4SAYMuEnvPcQCFcSf7gmNf5TU13g4fmiNpQN6eKjJrR37VZhEZL71mgwxJbhVTdtzskTDt1ocUQ98PX3HTr";
+      // loaned first, then arb,有趣！！
+      // "4Y59CaeQKDxTkcUQS8kDRRBXYrJZygrrrWVSiAXWWu6x3vZjT38sMmF7CjhHB6uJsinRHXZy8WHcwTPq6whidfxJ";
+      // "23BUNbgXLWFWa8xy7GW4a6TXn4y2LZC7djeZUo3FQeNwkB1gAqEDqBLHDskvT75zfHH8dnuSiznLTVKMozUP1Ge7";
 
-    // loaned first, then arb,有趣！！
-    // "4Y59CaeQKDxTkcUQS8kDRRBXYrJZygrrrWVSiAXWWu6x3vZjT38sMmF7CjhHB6uJsinRHXZy8WHcwTPq6whidfxJ";
+      "EyvUPqYuo6DCEkDVgZTLorEnH64BTehVcSiorXNBse1D4tmGanr78dV8AmL6jCjsazL9CidyTEmTwWAcWJfiUzo";
 
     // const transaction = await connection.getParsedTransaction(
     //   transactionSignature,

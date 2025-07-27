@@ -127,7 +127,21 @@ export class RaydiumSwapParser {
         swap_v2: [43, 4, 237, 11, 26, 201, 30, 98],
       };
 
-      if (!isValidDiscriminator(discriminator, expectedDiscriminator.swap)) {
+      let type = "";
+      if (isValidDiscriminator(discriminator, expectedDiscriminator.swap)) {
+        type = "RAYDIUM_CLMM_SWAP";
+      } else if (
+        isValidDiscriminator(
+          discriminator,
+          expectedDiscriminator.swap_router_base_in
+        )
+      ) {
+        type = "RAYDIUM_CLMM_SWAP_ROUTER_BASE_IN";
+      } else if (
+        isValidDiscriminator(discriminator, expectedDiscriminator.swap_v2)
+      ) {
+        type = "RAYDIUM_CLMM_SWAP_V2";
+      } else {
         return null;
       }
 
@@ -138,10 +152,9 @@ export class RaydiumSwapParser {
         inputVault,
         outputVault,
       } = extractAccountInfo(accounts, [2, 3, 4, 5, 6]);
-
       return buildSwapEvent(
         poolAddress,
-        "RAYDIUM_CLMM_SWAP",
+        type,
         inputVault,
         outputVault,
         inputTokenAccount,
