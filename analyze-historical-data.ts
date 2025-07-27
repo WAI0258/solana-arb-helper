@@ -17,14 +17,14 @@ async function analyzeHistoricalData() {
   const analyzer = new BatchAnalyzer(config);
 
   try {
-    console.log("Using date range analysis with file management...");
-    const result = await analyzer.analyzeHistoricalData();
+    // console.log("Using date range analysis with file management...");
+    // const result = await analyzer.analyzeHistoricalData();
 
     // analyze specific slot range
-    // console.log("Using specific slot range analysis with file management...");
-    // const startSlot = 335415235;
-    // const endSlot = 337359232;
-    // const result = await analyzer.analyzeSlotRange(startSlot, endSlot);
+    console.log("Using specific slot range analysis with file management...");
+    const startSlot = 335256719; // 2025-04-23T00:00:00Z
+    const endSlot = 337219904; // 2025-05-01T23:59:59Z
+    const result = await analyzer.analyzeSlotRange(startSlot, endSlot);
 
     // analyze date range--without file management
     // console.log("Using core analyzer directly...");

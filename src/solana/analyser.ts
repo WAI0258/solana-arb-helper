@@ -262,10 +262,16 @@ export class TransactionAnalyzer {
         }
       }
 
+      // Filter to only include arbitrage transactions
+      const arbitrageTransactions = analyzedTransactions.filter(
+        (tx) => tx.arbitrageInfo
+      );
+
       return {
         slot,
         timestamp,
-        transactions: analyzedTransactions,
+        transactions: arbitrageTransactions,
+        validTransactions: analyzedTransactions.length,
       };
     } catch (error) {
       console.error(`Error analyzing Solana block ${slot}:`, error);
@@ -277,54 +283,81 @@ export class TransactionAnalyzer {
     connection: any,
     startSlot: number,
     endSlot: number,
-    onProgress?: (currentSlot: number, totalSlots: number) => void
+    onProgress?: (
+      currentSlot: number,
+      totalSlots: number,
+      successSlot?: number
+    ) => void
   ): Promise<BlockAnalysisResult[]> {
     const results: BlockAnalysisResult[] = [];
     const totalSlots = endSlot - startSlot + 1;
+    const maxRetries = 5;
+    const baseDelay = 1000; // 1 second
 
     console.log(
       `Analyzing slots from ${startSlot} to ${endSlot} (${totalSlots} slots)`
     );
 
     for (let slot = startSlot; slot <= endSlot; slot++) {
-      try {
-        const block = await connection.getBlock(slot, {
-          maxSupportedTransactionVersion: 0,
-          transactionDetails: "full",
-          rewards: false,
-        });
+      let retryCount = 0;
+      let success = false;
 
-        if (block && block.transactions) {
-          const timestamp = new Date(block.blockTime! * 1000);
-          const result = await this.analyzeSolanaBlock(
-            slot,
-            timestamp,
-            block.transactions as any[]
-          );
+      while (retryCount < maxRetries && !success) {
+        try {
+          const block = await connection.getBlock(slot, {
+            maxSupportedTransactionVersion: 0,
+            transactionDetails: "full",
+            rewards: false,
+          });
 
-          if (result) {
-            results.push(result);
-            console.log(
-              `✔ Analyzed slot ${slot} (${results.length}/${totalSlots})`
+          if (block && block.transactions) {
+            const timestamp = new Date(block.blockTime! * 1000);
+            const result = await this.analyzeSolanaBlock(
+              slot,
+              timestamp,
+              block.transactions as any[]
             );
-          } else {
-            console.log(`✘ Failed to analyze slot ${slot}`);
-          }
-        } else {
-          console.log(`✘ No data for slot ${slot}`);
-        }
 
-        if (onProgress) {
-          onProgress(slot - startSlot + 1, totalSlots);
+            if (result) {
+              results.push(result);
+              console.log(
+                `✔ Analyzed slot ${slot} (${results.length}/${totalSlots})`
+              );
+
+              // Call progress callback with successful slot
+              if (onProgress) {
+                onProgress(slot - startSlot + 1, totalSlots, slot);
+              }
+              success = true;
+            } else {
+              console.log(`✘ Failed to analyze slot ${slot}`);
+              // Don't call progress callback for failed analysis
+              success = true; // Mark as "processed" even if analysis failed
+            }
+          } else {
+            console.log(`✘ No data for slot ${slot}`);
+            // Don't call progress callback for slots with no data
+            success = true; // Mark as "processed" even if no data
+          }
+        } catch (error) {
+          retryCount++;
+          const delay = baseDelay * Math.pow(2, retryCount - 1); // Exponential backoff
+
+          if (retryCount < maxRetries) {
+            console.log(
+              `⚠️ Retry ${retryCount}/${maxRetries} for slot ${slot} after ${delay}ms delay`
+            );
+            await new Promise((resolve) => setTimeout(resolve, delay));
+          } else {
+            console.error(
+              `❌ Failed to analyze slot ${slot} after ${maxRetries} retries:`,
+              error
+            );
+            // Don't call progress callback for failed slots
+          }
         }
-      } catch (error) {
-        console.error(`Error analyzing slot ${slot}:`, error);
       }
     }
-
-    console.log(
-      `Analysis completed. Processed ${results.length}/${totalSlots} slots`
-    );
     return results;
   }
 }

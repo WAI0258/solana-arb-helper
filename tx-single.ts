@@ -48,7 +48,9 @@ async function testAnalyzeSolanaTransaction() {
       // "4FgSEC8WS49J7QG8u2xyC8SNWPBNrmgiZAKFR5VdTJ8ww2J6HTQs5zeotL7undCt9x1ZTYbq9avPfM854BaKUkqj"; // pool program+damm v2
 
       //solfi
-      "3nrmL1KmrsPKMZoXxbdMubReLTEWp3948Lbpo1A6SVPCiMMN193LkDTQceV22dmY1UK9LwGm2t3D5bXFVVSygVym";
+      // "3nrmL1KmrsPKMZoXxbdMubReLTEWp3948Lbpo1A6SVPCiMMN193LkDTQceV22dmY1UK9LwGm2t3D5bXFVVSygVym"; // jupitet外层套利，所以未检测出来
+      // "3i4HtxGHKv5bXJcmaJias6L1sA5MfrqHsYRXcQ5LZymX3hQgjWKGRwKdz5eXxMZzidNG1qAX92mtGo7LTMNcrsqh"; //dlmm+whirlpool
+      "5MSNYMM77T7aoDNhEYwjC4SyD5DyKJV5SMcDrMTVZFdjLSxkvUCzqyuMgWjQtQConSkXokzcjhmYzGvmwfwU6Ww6"; //whirlpool
 
     // const transaction = await connection.getParsedTransaction(
     //   transactionSignature,

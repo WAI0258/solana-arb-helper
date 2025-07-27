@@ -104,6 +104,7 @@ export interface BlockAnalysisResult {
     tokenChanges: Record<string, string>;
     addressTokenChanges: Record<string, TokenBalanceChange[]>;
   }>;
+  validTransactions?: number;
 }
 
 export interface BatchAnalysisResult {

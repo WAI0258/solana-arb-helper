@@ -41,8 +41,10 @@ export class BatchAnalyzer {
 
   private saveProgress(state: ProgressState) {
     FileUtils.safeWriteJson(this.progressFile, state, "Error saving progress:");
+    const processedCount = state.processedSlots.length;
+    const percentage = ((processedCount / state.totalSlots) * 100).toFixed(1);
     console.log(
-      `Progress saved: slot ${state.currentSlot}/${state.totalSlots}`
+      `Progress saved: ${processedCount}/${state.totalSlots} slots (${percentage}%)`
     );
   }
 
@@ -86,7 +88,8 @@ export class BatchAnalyzer {
     let totalProfit = 0n;
 
     const totalTransactions = results.reduce(
-      (sum, block) => sum + block.transactions.length,
+      (sum, block) =>
+        sum + (block.validTransactions || block.transactions.length),
       0
     );
 
@@ -240,7 +243,78 @@ export class BatchAnalyzer {
       summaries,
       "Error updating analysis summary:"
     );
-    console.log(`Updated analysis summary with ${summaries.length} entries`);
+  }
+
+  private savePartialResults(
+    results: BlockAnalysisResult[],
+    startSlot: number,
+    endSlot: number,
+    currentSlot: number
+  ) {
+    const filename = `partial_analysis_${startSlot}_${endSlot}.json`;
+    const outputPath = path.join(this.config.outputDir, filename);
+
+    const data = {
+      metadata: {
+        createdAt: new Date().toISOString(),
+        slotRange: `${startSlot}-${endSlot}`,
+        currentSlot,
+        totalResults: results.length,
+        slotsWithArbitrage: results.filter(
+          (block) => block.transactions.length > 0
+        ).length,
+        isPartial: true,
+      },
+      results,
+    };
+
+    const jsonString = JSON.stringify(
+      data,
+      (key, value) => {
+        if (typeof value === "bigint") {
+          return value.toString();
+        }
+        return value;
+      },
+      2
+    );
+
+    fs.writeFileSync(outputPath, jsonString);
+    const slotsWithArbitrage = results.filter(
+      (block) => block.transactions.length > 0
+    ).length;
+    console.log(
+      `Saved partial results to ${outputPath} (slot ${currentSlot}) - ${slotsWithArbitrage}/${results.length} slots with arbitrage`
+    );
+  }
+
+  private shouldCleanupProgress(
+    processedSlots: number[],
+    totalSlots: number
+  ): boolean {
+    // If we've processed less than 10% of total slots, cleanup progress
+    const processedCount = processedSlots.length;
+    const threshold = Math.max(10, Math.floor(totalSlots * 0.1)); // At least 10 slots or 10% of total
+    return processedCount < threshold;
+  }
+
+  private cleanupEarlyTermination(startSlot: number, endSlot: number) {
+    console.log("Early termination detected - cleaning up progress files");
+
+    // Delete progress file
+    FileUtils.safeDelete(this.progressFile, "Error cleaning up progress file:");
+
+    // Delete partial results file if it exists
+    const partialResultsFile = path.join(
+      this.config.outputDir,
+      `partial_analysis_${startSlot}_${endSlot}.json`
+    );
+    FileUtils.safeDelete(
+      partialResultsFile,
+      "Error cleaning up partial results file:"
+    );
+
+    console.log("Progress files cleaned up for fresh restart");
   }
 
   public async analyzeWithFileManagement(
@@ -275,6 +349,7 @@ export class BatchAnalyzer {
     const savedProgress = this.loadProgress();
     let currentSlot = startSlot;
     let processedSlots: number[] = [];
+    let accumulatedResults: BlockAnalysisResult[] = [];
 
     if (
       savedProgress &&
@@ -283,61 +358,125 @@ export class BatchAnalyzer {
     ) {
       currentSlot = savedProgress.currentSlot;
       processedSlots = savedProgress.processedSlots;
-      console.log(
-        `Resuming from slot ${currentSlot}, already processed ${processedSlots.length} slots`
-      );
-    }
 
-    // Analyze slots using the analyzer's built-in slot range method
-    const results = await this.analyzer.analyzeSolanaSlotRange(
-      this.connection,
-      currentSlot,
-      endSlot,
-      (currentSlot, totalSlots) => {
-        // Progress callback
-        const percentage = ((currentSlot / totalSlots) * 100).toFixed(1);
-        console.log(`Progress: ${currentSlot}/${totalSlots} (${percentage}%)`);
+      // Check if we should cleanup early termination
+      if (this.shouldCleanupProgress(processedSlots, totalSlots)) {
+        this.cleanupEarlyTermination(startSlot, endSlot);
+        // Reset to start fresh
+        currentSlot = startSlot;
+        processedSlots = [];
+        accumulatedResults = [];
+        console.log("Starting fresh analysis due to early termination");
+      } else {
+        console.log(
+          `Resuming from slot ${currentSlot}, already processed ${processedSlots.length} slots`
+        );
 
-        // Save progress periodically
-        const progressState: ProgressState = {
-          currentSlot: currentSlot + 1,
-          processedSlots: [...processedSlots, currentSlot],
-          totalSlots,
-          startSlot,
-          endSlot,
-          lastSaveTime: new Date().toISOString(),
-        };
-        this.saveProgress(progressState);
-
-        // Cache is automatically saved when new pools/tokens are encountered
-        if (currentSlot % this.config.saveInterval === 0) {
-          console.log(`Checkpoint reached: ${currentSlot}/${totalSlots}`);
+        // Try to load existing partial results
+        const partialResultsFile = path.join(
+          this.config.outputDir,
+          `partial_analysis_${startSlot}_${endSlot}.json`
+        );
+        if (fs.existsSync(partialResultsFile)) {
+          try {
+            const partialData = JSON.parse(
+              fs.readFileSync(partialResultsFile, "utf8")
+            );
+            accumulatedResults = partialData.results || [];
+            console.log(
+              `Loaded ${accumulatedResults.length} existing partial results`
+            );
+          } catch (error) {
+            console.log("Could not load partial results, starting fresh");
+          }
         }
       }
-    );
+    }
+
+    // Analyze slots in batches to allow for intermediate saves
+    const batchSize = this.config.saveInterval;
+    let currentBatchStart = currentSlot;
+
+    while (currentBatchStart <= endSlot) {
+      const currentBatchEnd = Math.min(
+        currentBatchStart + batchSize - 1,
+        endSlot
+      );
+
+      // Analyze current batch
+      const batchResults = await this.analyzer.analyzeSolanaSlotRange(
+        this.connection,
+        currentBatchStart,
+        currentBatchEnd,
+        (currentSlot: number, totalSlots: number, successSlot?: number) => {
+          // Progress callback for current batch
+          // Only count successfully processed slots
+          if (successSlot !== undefined) {
+            const globalSlot = successSlot;
+            const globalTotalSlots = endSlot - startSlot + 1;
+
+            // Update processedSlots array only for successful slots
+            if (!processedSlots.includes(globalSlot)) {
+              processedSlots.push(globalSlot);
+            }
+
+            const processedCount = processedSlots.length;
+            const percentage = (
+              (processedCount / globalTotalSlots) *
+              100
+            ).toFixed(1);
+            // console.log(
+            //   `Progress: ${processedCount}/${globalTotalSlots} (${percentage}%)`
+            // );
+
+            // Save progress periodically
+            const progressState: ProgressState = {
+              currentSlot: globalSlot + 1,
+              processedSlots: [...processedSlots],
+              totalSlots: globalTotalSlots,
+              startSlot,
+              endSlot,
+              lastSaveTime: new Date().toISOString(),
+            };
+            this.saveProgress(progressState);
+          }
+        }
+      );
+
+      // Add batch results to accumulated results
+      accumulatedResults = [...accumulatedResults, ...batchResults];
+
+      this.savePartialResults(
+        accumulatedResults,
+        startSlot,
+        endSlot,
+        currentBatchEnd
+      );
+
+      // Move to next batch
+      currentBatchStart = currentBatchEnd + 1;
+    }
 
     // calculate statistics from all results
-    const statistics = this.calculateStatistics(results);
+    const statistics = this.calculateStatistics(accumulatedResults);
 
-    // Filter results to only include arbitrage transactions for return
-    const arbitrageResults = results
-      .map((block) => ({
-        ...block,
-        transactions: block.transactions.filter((tx) => tx.arbitrageInfo),
-      }))
-      .filter((block) => block.transactions.length > 0);
+    // Keep all results but filter transactions to only include arbitrage
+    const filteredResults = accumulatedResults.map((block) => ({
+      ...block,
+      transactions: block.transactions.filter((tx) => tx.arbitrageInfo),
+    }));
 
     const batchResult: BatchAnalysisResult = {
-      totalBlocks: arbitrageResults.length,
-      processedBlocks: results.length,
+      totalBlocks: filteredResults.length,
+      processedBlocks: accumulatedResults.length,
       failedBlocks: 0,
       arbitrageTransactions: statistics.arbitrageTransactions,
       totalTransactions: statistics.totalTransactions,
-      startSlot: arbitrageResults[0]?.slot || 0,
-      endSlot: arbitrageResults[arbitrageResults.length - 1]?.slot || 0,
+      startSlot: startSlot, // Keep original slot range
+      endSlot: endSlot, // Keep original slot range
       startDate: this.config.startDate,
       endDate: this.config.endDate,
-      results: arbitrageResults, // Only arbitrage transactions
+      results: filteredResults, // All slots with filtered transactions
       statistics: {
         totalProfit: statistics.totalProfit,
         protocolStats: statistics.protocolStats,
@@ -347,15 +486,22 @@ export class BatchAnalyzer {
       },
     };
 
-    // save results (only arbitrage transactions)
-    this.saveResults(arbitrageResults, batchResult);
+    // save results (all slots with filtered transactions)
+    this.saveResults(filteredResults, batchResult);
 
-    // Cache is automatically saved when new pools/tokens are encountered
-    console.log("Analysis completed - cache automatically managed");
-
-    // Clean up progress file
+    // Clean up partial results and progress file
+    const partialResultsFile = path.join(
+      this.config.outputDir,
+      `partial_analysis_${startSlot}_${endSlot}.json`
+    );
+    FileUtils.safeDelete(
+      partialResultsFile,
+      "Error cleaning up partial results file:"
+    );
     FileUtils.safeDelete(this.progressFile, "Error cleaning up progress file:");
-    console.log("Progress file cleaned up");
+    console.log("--------------------------------");
+    console.log("Analysis completed");
+    console.log("--------------------------------");
 
     return batchResult;
   }
