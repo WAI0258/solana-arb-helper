@@ -57,10 +57,12 @@ async function testAnalyzeSolanaTransaction() {
 
       // lifinity
       // "5vt6tp4UBE64TH5bxTWcrZACcW3g9ruc8Cv2nhzFNfSBFuJs6qD2JRKnjUq7dCT8i857jMnhT25a4MaLtJ4imQWr";
-      // "5KQrudiKeeLAiRP4GkLNraZn6X73y5eedg2RCMkGRLiS9kKj8g3MKmqTM6dbYURWbJKCnee6VQRkxmfoom3Yo23F";
+      // "nDDe4HrRnYzNEDFpoCjPhtF4FqHZZ22yDXbufNPTxb7Wi8zdYvtpKNSSwKU31yZRgMZihTnZ7XHzJVXjZg2mJdo";
 
-      // loaned first, then arb,有趣！！
-      "4Y59CaeQKDxTkcUQS8kDRRBXYrJZygrrrWVSiAXWWu6x3vZjT38sMmF7CjhHB6uJsinRHXZy8WHcwTPq6whidfxJ";
+      "uZ6U4SAYMuEnvPcQCFcSf7gmNf5TU13g4fmiNpQN6eKjJrR37VZhEZL71mgwxJbhVTdtzskTDt1ocUQ98PX3HTr";
+
+    // loaned first, then arb,有趣！！
+    // "4Y59CaeQKDxTkcUQS8kDRRBXYrJZygrrrWVSiAXWWu6x3vZjT38sMmF7CjhHB6uJsinRHXZy8WHcwTPq6whidfxJ";
 
     // const transaction = await connection.getParsedTransaction(
     //   transactionSignature,

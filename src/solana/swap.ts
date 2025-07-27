@@ -5,6 +5,7 @@ import { OrcaSwapParser } from "./swap-parsers/OrcaSwapParser";
 import { MeteoraSwapParser } from "./swap-parsers/MeteoraSwapParser";
 import { SolFiSwapParser } from "./swap-parsers/SolFiSwapParser";
 import { PumpFunSwapParser } from "./swap-parsers/PumpFunSwapParser";
+import { LifinitySwapParser } from "./swap-parsers/LifinitySwapParser";
 
 export class SwapParser {
   private raydiumParser = new RaydiumSwapParser();
@@ -12,6 +13,7 @@ export class SwapParser {
   private meteoraParser = new MeteoraSwapParser();
   private solfiParser = new SolFiSwapParser();
   private pumpFunParser = new PumpFunSwapParser();
+  private lifinityParser = new LifinitySwapParser();
   public parseSolanaSwapEvent(
     dexProgram: {
       dexProgram: string;
@@ -60,6 +62,14 @@ export class SwapParser {
           );
         case "PUMPFUN":
           return this.pumpFunParser.parseSwap(
+            instructionData,
+            accounts,
+            innerTokenAccounts,
+            instructionIndex,
+            dexProgram.dexProgramInfo?.type
+          );
+        case "LIFINITY":
+          return this.lifinityParser.parseSwap(
             instructionData,
             accounts,
             innerTokenAccounts,

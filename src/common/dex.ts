@@ -86,6 +86,18 @@ const DEX_PROGRAM_ID = {
       protocol: "SolFi AMM",
     },
   },
+  LIFINITY: {
+    SWAP: {
+      address: "EewxydAPCCVuNEyrVN68PuSYdQ7wKn27V9Gjeoi8dy3S",
+      type: "MMaaS",
+      protocol: "Lifinity MMaaS",
+    },
+    SWAP_V2: {
+      address: "2wT8Yq49kHgDzXuPxZSaeLaH1qbmGXtEyPy64bL7aD3c",
+      type: "MMaaS_V2",
+      protocol: "Lifinity MMaaS V2",
+    },
+  },
   SERUM: {
     DEX_V3: {
       address: "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
