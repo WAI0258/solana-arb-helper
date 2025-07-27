@@ -4,12 +4,14 @@ import { RaydiumSwapParser } from "./swap-parsers/RaydiumSwapParser";
 import { OrcaSwapParser } from "./swap-parsers/OrcaSwapParser";
 import { MeteoraSwapParser } from "./swap-parsers/MeteoraSwapParser";
 import { SolFiSwapParser } from "./swap-parsers/SolFiSwapParser";
+import { PumpFunSwapParser } from "./swap-parsers/PumpFunSwapParser";
 
 export class SwapParser {
   private raydiumParser = new RaydiumSwapParser();
   private orcaParser = new OrcaSwapParser();
   private meteoraParser = new MeteoraSwapParser();
   private solfiParser = new SolFiSwapParser();
+  private pumpFunParser = new PumpFunSwapParser();
   public parseSolanaSwapEvent(
     dexProgram: {
       dexProgram: string;
@@ -55,6 +57,14 @@ export class SwapParser {
             accounts,
             innerTokenAccounts,
             instructionIndex
+          );
+        case "PUMPFUN":
+          return this.pumpFunParser.parseSwap(
+            instructionData,
+            accounts,
+            innerTokenAccounts,
+            instructionIndex,
+            dexProgram.dexProgramInfo?.type
           );
         default:
           return null;

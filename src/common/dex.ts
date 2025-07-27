@@ -1,5 +1,3 @@
-import type { PumpFunSwapParser } from "@/solana/swap-parsers/PumpFunSwapParser";
-
 // DEX Program
 export interface DexProgram {
   address: string;

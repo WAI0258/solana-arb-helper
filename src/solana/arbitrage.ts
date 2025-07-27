@@ -2,7 +2,6 @@ import type {
   StandardSwapEvent,
   EdgeInfo,
   ArbitrageCycle,
-  ArbitrageInfo,
 } from "../common/types";
 
 export class ArbitrageDetector {

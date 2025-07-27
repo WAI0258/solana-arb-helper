@@ -12,23 +12,16 @@ import type {
   BlockAnalysisResult,
 } from "../common/types";
 
-import { PoolManager } from "./pool";
-import { SwapParser } from "./swap";
 import { ArbitrageDetector } from "./arbitrage";
 import { TransactionAnalyzer } from "./analyser";
-import { cacheManager } from "../cache";
 
 export class SolanaArbHelper {
   public readonly connection: Connection;
-  private poolManager: PoolManager;
-  private swapParser: SwapParser;
   private arbitrageDetector: ArbitrageDetector;
   private transactionAnalyzer: TransactionAnalyzer;
 
   constructor(rpcUrl: string) {
     this.connection = new Connection(rpcUrl, "confirmed");
-    this.poolManager = new PoolManager();
-    this.swapParser = new SwapParser();
     this.arbitrageDetector = new ArbitrageDetector();
     this.transactionAnalyzer = new TransactionAnalyzer();
   }
@@ -102,10 +95,6 @@ export class SolanaArbHelper {
       transactions
     );
   }
-
-  public getTokenCacheSize(): number {
-    return cacheManager.getTokenCacheSize();
-  }
 }
 
 export type {
@@ -120,4 +109,4 @@ export type {
   BlockAnalysisResult,
 };
 
-export { PoolManager, SwapParser, ArbitrageDetector, TransactionAnalyzer };
+export { ArbitrageDetector, TransactionAnalyzer };

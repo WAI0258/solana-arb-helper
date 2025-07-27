@@ -1,14 +1,8 @@
-import { PublicKey, type ParsedTransactionWithMeta } from "@solana/web3.js";
-import bs58 from "bs58";
+import { type ParsedTransactionWithMeta } from "@solana/web3.js";
 
 import type {
-  ExtendedPoolInfo,
   StandardSwapEvent,
-  TokenTransfer,
   TokenBalanceChange,
-  EdgeInfo,
-  CycleEdge,
-  ArbitrageCycle,
   ArbitrageInfo,
   BlockAnalysisResult,
 } from "../common/types";
