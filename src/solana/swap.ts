@@ -6,6 +6,7 @@ import { MeteoraSwapParser } from "./swap-parsers/MeteoraSwapParser";
 import { SolFiSwapParser } from "./swap-parsers/SolFiSwapParser";
 import { PumpFunSwapParser } from "./swap-parsers/PumpFunSwapParser";
 import { LifinitySwapParser } from "./swap-parsers/LifinitySwapParser";
+import { OpenBookParser } from "./swap-parsers/OpenBookParser";
 
 export class SwapParser {
   private raydiumParser = new RaydiumSwapParser();
@@ -14,6 +15,7 @@ export class SwapParser {
   private solfiParser = new SolFiSwapParser();
   private pumpFunParser = new PumpFunSwapParser();
   private lifinityParser = new LifinitySwapParser();
+  private openBookParser = new OpenBookParser();
   public parseSolanaSwapEvent(
     dexProgram: {
       dexProgram: string;
@@ -42,9 +44,6 @@ export class SwapParser {
             instructionIndex,
             dexProgram.dexProgramInfo?.type
           );
-        case "serum":
-          // Serum swap implementation not available
-          return null;
         case "METEORA":
           return this.meteoraParser.parseSwap(
             instructionData,
@@ -75,6 +74,13 @@ export class SwapParser {
             innerTokenAccounts,
             instructionIndex,
             dexProgram.dexProgramInfo?.type
+          );
+        case "OPENBOOK":
+          return this.openBookParser.parseSwap(
+            instructionData,
+            accounts,
+            innerTokenAccounts,
+            instructionIndex
           );
         default:
           return null;

@@ -107,9 +107,9 @@ export class OrcaSwapParser {
       } else if (
         isValidDiscriminator(discriminator, expectedDiscriminator.swap)
       ) {
-        const aToB = instructionData.readUInt8(instructionData.length - 1);
+        const a2b = instructionData.readUInt8(instructionData.length - 1);
         type = "ORCA_CLMM_SWAP";
-        if (aToB === 1) {
+        if (a2b === 1) {
           accountToExtract = [2, 3, 5, 4, 6];
         } else {
           accountToExtract = [2, 5, 3, 6, 4];
@@ -118,8 +118,8 @@ export class OrcaSwapParser {
         isValidDiscriminator(discriminator, expectedDiscriminator.swap_v2)
       ) {
         type = "ORCA_CLMM_SWAP_V2";
-        const aToB = instructionData.readUInt8(instructionData.length - 2);
-        if (aToB === 1) {
+        const a2b = instructionData.readUInt8(instructionData.length - 2);
+        if (a2b === 1) {
           accountToExtract = [4, 7, 9, 8, 10];
         } else {
           accountToExtract = [4, 9, 7, 10, 8];

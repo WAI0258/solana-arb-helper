@@ -64,7 +64,9 @@ async function testAnalyzeSolanaTransaction() {
       // "4Y59CaeQKDxTkcUQS8kDRRBXYrJZygrrrWVSiAXWWu6x3vZjT38sMmF7CjhHB6uJsinRHXZy8WHcwTPq6whidfxJ";
       // "23BUNbgXLWFWa8xy7GW4a6TXn4y2LZC7djeZUo3FQeNwkB1gAqEDqBLHDskvT75zfHH8dnuSiznLTVKMozUP1Ge7";
 
-      "EyvUPqYuo6DCEkDVgZTLorEnH64BTehVcSiorXNBse1D4tmGanr78dV8AmL6jCjsazL9CidyTEmTwWAcWJfiUzo";
+      // openbook
+      // "EyvUPqYuo6DCEkDVgZTLorEnH64BTehVcSiorXNBse1D4tmGanr78dV8AmL6jCjsazL9CidyTEmTwWAcWJfiUzo"; //atob
+      "5fdPfgLTHwRxAZzs48RuQVWqbLuefQwdfVM68Jqeqc23BJdjuM3tGadURHSW1b7se3gsTdFjniB1PPSqFnsaGa7X"; //btoa
 
     // const transaction = await connection.getParsedTransaction(
     //   transactionSignature,

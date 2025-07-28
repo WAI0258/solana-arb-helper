@@ -98,11 +98,12 @@ const DEX_PROGRAM_ID = {
       protocol: "Lifinity MMaaS V2",
     },
   },
-  SERUM: {
-    DEX_V3: {
-      address: "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
-      type: "ORDERBOOK_DEX",
-      protocol: "Serum DEX V3",
+  // CLOB
+  OPENBOOK: {
+    V2: {
+      address: "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb",
+      type: "CLOB_V2",
+      protocol: "Openbook DEX V2",
     },
   },
   SABER: {
