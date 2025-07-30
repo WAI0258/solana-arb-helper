@@ -6,7 +6,8 @@ export class SolFiSwapParser {
     instructionData: Buffer,
     accounts: any[],
     changedTokenMetas: any[],
-    instructionType: string
+    instructionType: string,
+    dexType?: string
   ): StandardSwapEvent | null {
     try {
       const discriminator = instructionData.readUInt8(0);
@@ -14,10 +15,10 @@ export class SolFiSwapParser {
       if (discriminator !== 7) {
         return null;
       }
-      let accountIndexs = [1, 2, 3, 4, 5];
+      let accountIndexs = [1, 4, 5, 2, 3];
       if (a2b === 1) {
         // 1: B to A
-        accountIndexs = [1, 3, 2, 5, 4];
+        accountIndexs = [1, 5, 4, 3, 2];
       }
       const {
         poolAddress,
@@ -30,10 +31,10 @@ export class SolFiSwapParser {
       return buildSwapEvent(
         poolAddress,
         "SOLFI_SWAP",
-        inputTokenAccount,
-        outputTokenAccount,
         intoVault,
         outofVault,
+        inputTokenAccount,
+        outputTokenAccount,
         changedTokenMetas,
         instructionType
       );

@@ -56,7 +56,9 @@ export class TransactionAnalyzer {
       { signature: string; slot: number }
     >();
 
-    // parse all instructions using the instruction processor
+    // token balance changed accounts
+    const tokenAccountsCache =
+      this.accountProcessor.getTokenAccountsWithBalanceChanges(tx);
     const allInstructions = this.instructionProcessor.getAllInstructions(tx);
 
     for (const instruction of allInstructions) {
@@ -64,9 +66,6 @@ export class TransactionAnalyzer {
         this.instructionProcessor.getProgramIdString(instruction);
       // whether is from a dex program
       if (isDexProgramId(programIdString)) {
-        // get all token accounts
-        const tokenAccounts =
-          this.accountProcessor.getTokenAccountsWithBalanceChanges(tx);
         const dexProgram = getDexNameByProgramId(programIdString);
         const dexProgramInfo = getProgramInfo(programIdString);
 
@@ -76,7 +75,7 @@ export class TransactionAnalyzer {
           changedTokenMetas =
             this.instructionProcessor.filterTokenAccountsForInstruction(
               instruction,
-              tokenAccounts
+              tokenAccountsCache
             );
         } else {
           const getInnerInstructions = allInstructions.filter(
@@ -84,7 +83,7 @@ export class TransactionAnalyzer {
           );
           changedTokenMetas = this.transferParser.parseTransferEvent(
             getInnerInstructions,
-            tokenAccounts
+            tokenAccountsCache
           );
         }
 

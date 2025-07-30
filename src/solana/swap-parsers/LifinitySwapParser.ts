@@ -58,14 +58,14 @@ export class LifinitySwapParser {
         outputTokenAccount,
         intoVault,
         outofVault,
-      } = extractAccountInfo(accounts, [1, 5, 6, 3, 4]);
+      } = extractAccountInfo(accounts, [1, 3, 4, 5, 6]);
       return buildSwapEvent(
         poolAddress,
         type,
-        inputTokenAccount,
-        outputTokenAccount,
         intoVault,
         outofVault,
+        inputTokenAccount,
+        outputTokenAccount,
         changedTokenMetas,
         instructionType
       );

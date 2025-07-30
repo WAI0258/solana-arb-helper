@@ -98,13 +98,19 @@ export class AccountProcessor {
         };
       }
 
-      if (index >= baseCount + writableCount) {
-        const readonlyIndex = index - baseCount - writableCount;
-        return {
-          accountKey: loadedAddresses.readonly[readonlyIndex],
-          source: "loadedAddresses.readonly",
-          originalIndex: readonlyIndex,
-        };
+      if (loadedAddresses.readonly && loadedAddresses.readonly.length > 0) {
+        const readonlyCount = loadedAddresses.readonly.length;
+        if (
+          index >= baseCount + writableCount &&
+          index < baseCount + writableCount + readonlyCount
+        ) {
+          const readonlyIndex = index - baseCount - writableCount;
+          return {
+            accountKey: loadedAddresses.readonly[readonlyIndex],
+            source: "loadedAddresses.readonly",
+            originalIndex: readonlyIndex,
+          };
+        }
       }
     }
 

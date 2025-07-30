@@ -115,10 +115,10 @@ export class PumpFunSwapParser {
       return buildSwapEvent(
         poolAddress,
         type,
-        inputTokenAccount,
-        outputTokenAccount,
         intoVault,
         outofVault,
+        inputTokenAccount,
+        outputTokenAccount,
         changedTokenMetas,
         instructionType
       );

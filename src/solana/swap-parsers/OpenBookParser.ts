@@ -11,7 +11,8 @@ export class OpenBookParser {
     instructionData: Buffer,
     accounts: any[],
     changedTokenMetas: any[],
-    instructionType: string
+    instructionType: string,
+    dexType?: string
   ): StandardSwapEvent | null {
     try {
       const discriminator = Array.from(instructionData.slice(0, 8));
@@ -24,10 +25,10 @@ export class OpenBookParser {
         a2b === 0
           ? "OPENBOOK_V2_PLACE_TAKE_ORDER_BID"
           : "OPENBOOK_V2_PLACE_TAKE_ORDER_ASK";
-      let accountIndexs = [2, 7, 6, 10, 9]; // b to a
+      let accountIndexs = [2, 10, 9, 7, 6]; // b to a
       if (a2b === 1) {
         // 1: a to b
-        accountIndexs = [2, 6, 7, 9, 10];
+        accountIndexs = [2, 9, 10, 6, 7];
       }
       const {
         poolAddress,
@@ -39,10 +40,10 @@ export class OpenBookParser {
       return buildSwapEvent(
         poolAddress,
         type,
-        inputTokenAccount,
-        outputTokenAccount,
         intoVault,
         outofVault,
+        inputTokenAccount,
+        outputTokenAccount,
         changedTokenMetas,
         instructionType
       );
