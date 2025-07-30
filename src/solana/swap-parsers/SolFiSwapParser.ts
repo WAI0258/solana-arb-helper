@@ -5,8 +5,8 @@ export class SolFiSwapParser {
   parseSwap(
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number
+    changedTokenMetas: any[],
+    instructionType: string
   ): StandardSwapEvent | null {
     try {
       const discriminator = instructionData.readUInt8(0);
@@ -23,8 +23,8 @@ export class SolFiSwapParser {
         poolAddress,
         inputTokenAccount,
         outputTokenAccount,
-        inputVault,
-        outputVault,
+        intoVault,
+        outofVault,
       } = extractAccountInfo(accounts, accountIndexs);
 
       return buildSwapEvent(
@@ -32,10 +32,10 @@ export class SolFiSwapParser {
         "SOLFI_SWAP",
         inputTokenAccount,
         outputTokenAccount,
-        inputVault,
-        outputVault,
-        innerTokenAccounts,
-        instructionIndex
+        intoVault,
+        outofVault,
+        changedTokenMetas,
+        instructionType
       );
     } catch (error) {
       console.error("Error parsing SolFi swap:", error);

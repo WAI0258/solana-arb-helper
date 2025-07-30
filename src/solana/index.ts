@@ -3,7 +3,6 @@ import { Connection } from "@solana/web3.js";
 import type {
   ExtendedPoolInfo,
   StandardSwapEvent,
-  TokenTransfer,
   TokenBalanceChange,
   EdgeInfo,
   CycleEdge,
@@ -100,7 +99,6 @@ export class SolanaArbHelper {
 export type {
   ExtendedPoolInfo,
   StandardSwapEvent,
-  TokenTransfer,
   TokenBalanceChange,
   EdgeInfo,
   CycleEdge,

@@ -13,8 +13,8 @@ export class OrcaSwapParser {
   parseSwap(
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number,
+    changedTokenMetas: any[],
+    instructionType: string,
     dexType?: string
   ): StandardSwapEvent | null {
     switch (dexType) {
@@ -22,24 +22,24 @@ export class OrcaSwapParser {
         return this.parseCPMMSwap(
           instructionData,
           accounts,
-          innerTokenAccounts,
-          instructionIndex,
+          changedTokenMetas,
+          instructionType,
           true
         );
       case "CPMM_V2":
         return this.parseCPMMSwap(
           instructionData,
           accounts,
-          innerTokenAccounts,
-          instructionIndex,
+          changedTokenMetas,
+          instructionType,
           false
         );
       case "CLMM":
         return this.parseCLMMSwap(
           instructionData,
           accounts,
-          innerTokenAccounts,
-          instructionIndex
+          changedTokenMetas,
+          instructionType
         );
       default:
         return null;
@@ -49,8 +49,8 @@ export class OrcaSwapParser {
   private parseCPMMSwap(
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number,
+    changedTokenMetas: any[],
+    instructionType: string,
     isV1: boolean
   ): StandardSwapEvent | null {
     try {
@@ -63,19 +63,19 @@ export class OrcaSwapParser {
         poolAddress,
         inputTokenAccount,
         outputTokenAccount,
-        inputVault,
-        outputVault,
+        intoVault,
+        outofVault,
       } = extractAccountInfo(accounts, [0, 3, 6, 4, 5]);
 
       return buildSwapEvent(
         poolAddress,
         isV1 ? "ORCA_CPMM_V1_SWAP" : "ORCA_CPMM_V2_SWAP",
-        inputVault,
-        outputVault,
+        intoVault,
+        outofVault,
         inputTokenAccount,
         outputTokenAccount,
-        innerTokenAccounts,
-        instructionIndex
+        changedTokenMetas,
+        instructionType
       );
     } catch (error) {
       console.error("Error parsing Orca CPMM V1 swap:", error);
@@ -86,8 +86,8 @@ export class OrcaSwapParser {
   private parseCLMMSwap(
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number
+    changedTokenMetas: any[],
+    instructionType: string
   ): StandardSwapEvent | null {
     try {
       const discriminator = Array.from(instructionData.slice(0, 8));
@@ -139,19 +139,19 @@ export class OrcaSwapParser {
         poolAddress,
         inputTokenAccount,
         outputTokenAccount,
-        inputVault,
-        outputVault,
+        intoVault,
+        outofVault,
       } = extractAccountInfo(accounts, accountToExtract);
 
       return buildSwapEvent(
         poolAddress,
         type,
-        inputVault,
-        outputVault,
+        intoVault,
+        outofVault,
         inputTokenAccount,
         outputTokenAccount,
-        innerTokenAccounts,
-        instructionIndex
+        changedTokenMetas,
+        instructionType
       );
     } catch (error) {
       console.error("Error parsing Orca CLMM swap:", error);

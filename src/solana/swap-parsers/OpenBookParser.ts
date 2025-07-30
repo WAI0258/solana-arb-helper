@@ -10,8 +10,8 @@ export class OpenBookParser {
   parseSwap(
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number
+    changedTokenMetas: any[],
+    instructionType: string
   ): StandardSwapEvent | null {
     try {
       const discriminator = Array.from(instructionData.slice(0, 8));
@@ -33,18 +33,18 @@ export class OpenBookParser {
         poolAddress,
         inputTokenAccount,
         outputTokenAccount,
-        inputVault,
-        outputVault,
+        intoVault,
+        outofVault,
       } = extractAccountInfo(accounts, accountIndexs);
       return buildSwapEvent(
         poolAddress,
         type,
         inputTokenAccount,
         outputTokenAccount,
-        inputVault,
-        outputVault,
-        innerTokenAccounts,
-        instructionIndex
+        intoVault,
+        outofVault,
+        changedTokenMetas,
+        instructionType
       );
     } catch (error) {
       console.error("Error parsing OpenBook v2 swap:", error);

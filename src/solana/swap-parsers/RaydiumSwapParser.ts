@@ -10,8 +10,8 @@ export class RaydiumSwapParser {
   parseSwap(
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number,
+    changedTokenMetas: any[],
+    instructionType: string,
     dexType?: string
   ): StandardSwapEvent | null {
     switch (dexType) {
@@ -19,29 +19,29 @@ export class RaydiumSwapParser {
         return this.parseCurveSwap(
           instructionData,
           accounts,
-          innerTokenAccounts,
-          instructionIndex
+          changedTokenMetas,
+          instructionType
         );
       case "CLMM":
         return this.parseCLMMSwap(
           instructionData,
           accounts,
-          innerTokenAccounts,
-          instructionIndex
+          changedTokenMetas,
+          instructionType
         );
       case "AMM":
         return this.parseAMMSwap(
           instructionData,
           accounts,
-          innerTokenAccounts,
-          instructionIndex
+          changedTokenMetas,
+          instructionType
         );
       case "CPMM":
         return this.parseCPMMSwap(
           instructionData,
           accounts,
-          innerTokenAccounts,
-          instructionIndex
+          changedTokenMetas,
+          instructionType
         );
       default:
         return null;
@@ -51,8 +51,8 @@ export class RaydiumSwapParser {
   private parseCurveSwap(
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number
+    changedTokenMetas: any[],
+    instructionType: string
   ): StandardSwapEvent | null {
     try {
       const discriminator = instructionData.readUInt8(0);
@@ -60,11 +60,11 @@ export class RaydiumSwapParser {
 
       const authority = accounts[2]; // pool payer
       const user = accounts[accounts.length - 1]; // user token account(may be one of them)
-      const userTokenAccounts = innerTokenAccounts.filter(
+      const userTokenAccounts = changedTokenMetas.filter(
         (account) => account.owner === user.toBase58()
       );
       // customize account mapping
-      const poolTokenAccount = innerTokenAccounts.filter(
+      const poolTokenAccount = changedTokenMetas.filter(
         (account) => account.owner === authority.toBase58()
       );
       const inputPoolTokenAccount = poolTokenAccount.find(
@@ -77,23 +77,23 @@ export class RaydiumSwapParser {
         poolAddress,
         inputTokenAccount,
         outputTokenAccount,
-        inputVault,
-        outputVault,
+        intoVault,
+        outofVault,
       } = {
         poolAddress: accounts[1].toBase58(),
         inputTokenAccount: userTokenAccounts.filter(
           (account) => account.addr !== accounts[accounts.length - 2].toBase58()
         )[0]?.addr,
         outputTokenAccount: accounts[accounts.length - 2].toBase58(),
-        inputVault: inputPoolTokenAccount?.addr,
-        outputVault: outputPoolTokenAccount?.addr,
+        intoVault: outputPoolTokenAccount?.addr,
+        outofVault: inputPoolTokenAccount?.addr,
       };
 
       const { tokenIn, tokenOut } = this.getAMMTokenMapping(
         "SWAP_BASE_IN",
-        inputVault,
-        outputVault,
-        innerTokenAccounts
+        intoVault,
+        outofVault,
+        changedTokenMetas
       );
 
       return {
@@ -105,7 +105,7 @@ export class RaydiumSwapParser {
         amountOut: getAbsoluteAmount(tokenOut?.amount),
         sender: inputTokenAccount,
         recipient: outputTokenAccount,
-        instructionIndex,
+        instructionType,
       };
     } catch (error) {
       console.error("Error parsing Raydium Curve swap:", error);
@@ -116,8 +116,8 @@ export class RaydiumSwapParser {
   private parseCLMMSwap(
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number
+    changedTokenMetas: any[],
+    instructionType: string
   ): StandardSwapEvent | null {
     try {
       const discriminator = Array.from(instructionData.slice(0, 8));
@@ -149,18 +149,18 @@ export class RaydiumSwapParser {
         poolAddress,
         inputTokenAccount,
         outputTokenAccount,
-        inputVault,
-        outputVault,
+        intoVault,
+        outofVault,
       } = extractAccountInfo(accounts, [2, 3, 4, 5, 6]);
       return buildSwapEvent(
         poolAddress,
         type,
-        inputVault,
-        outputVault,
+        intoVault,
+        outofVault,
         inputTokenAccount,
         outputTokenAccount,
-        innerTokenAccounts,
-        instructionIndex
+        changedTokenMetas,
+        instructionType
       );
     } catch (error) {
       console.error("Error parsing Raydium CLMM swap:", error);
@@ -171,8 +171,8 @@ export class RaydiumSwapParser {
   private parseAMMSwap(
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number
+    changedTokenMetas: any[],
+    instructionType: string
   ): StandardSwapEvent | null {
     try {
       const discriminator = instructionData.readUInt8(0);
@@ -192,12 +192,47 @@ export class RaydiumSwapParser {
 
       const authority = accounts[2]; // pool payer
       const user = accounts[accounts.length - 1]; // user token account(may be one of them)
-      const userTokenAccounts = innerTokenAccounts.filter(
+
+      if (instructionType === "outer") {
+        const {
+          poolAddress,
+          inputTokenAccount,
+          outputTokenAccount,
+          intoVault,
+          outofVault,
+        } = {
+          poolAddress: accounts[1].toBase58(),
+          inputTokenAccount: changedTokenMetas.find(
+            (account) => account.authority === user.toBase58()
+          )?.source,
+          outputTokenAccount: changedTokenMetas.find(
+            (account) => account.authority !== user.toBase58()
+          )?.destination,
+          intoVault: changedTokenMetas.find(
+            (account) => account.authority === user.toBase58()
+          )?.destination,
+          outofVault: changedTokenMetas.find(
+            (account) => account.authority !== user.toBase58()
+          )?.source,
+        };
+
+        return buildSwapEvent(
+          poolAddress,
+          "RAYDIUM_AMM_" + type,
+          intoVault,
+          outofVault,
+          inputTokenAccount,
+          outputTokenAccount,
+          changedTokenMetas,
+          instructionType
+        );
+      }
+
+      const userTokenAccounts = changedTokenMetas.filter(
         (account) => account.owner === user.toBase58()
       );
-
       // customize account mapping
-      const poolTokenAccount = innerTokenAccounts.filter(
+      const poolTokenAccount = changedTokenMetas.filter(
         (account) => account.owner === authority.toBase58()
       );
       const inputPoolTokenAccount = poolTokenAccount.find((account) =>
@@ -211,23 +246,23 @@ export class RaydiumSwapParser {
         poolAddress,
         inputTokenAccount,
         outputTokenAccount,
-        inputVault,
-        outputVault,
+        intoVault,
+        outofVault,
       } = {
         poolAddress: accounts[1].toBase58(),
         inputTokenAccount: userTokenAccounts.filter(
           (account) => account.addr !== accounts[accounts.length - 2].toBase58()
         )[0]?.addr,
         outputTokenAccount: accounts[accounts.length - 2].toBase58(),
-        inputVault: inputPoolTokenAccount?.addr,
-        outputVault: outputPoolTokenAccount?.addr,
+        intoVault: inputPoolTokenAccount?.addr,
+        outofVault: outputPoolTokenAccount?.addr,
       };
 
       const { tokenIn, tokenOut } = this.getAMMTokenMapping(
         type,
-        inputVault,
-        outputVault,
-        innerTokenAccounts
+        intoVault,
+        outofVault,
+        changedTokenMetas
       );
 
       return {
@@ -239,7 +274,7 @@ export class RaydiumSwapParser {
         amountOut: getAbsoluteAmount(tokenOut?.amount),
         sender: inputTokenAccount,
         recipient: outputTokenAccount,
-        instructionIndex,
+        instructionType,
       };
     } catch (error) {
       console.error("Error parsing Raydium AMM swap:", error);
@@ -250,8 +285,8 @@ export class RaydiumSwapParser {
   private parseCPMMSwap(
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number
+    changedTokenMetas: any[],
+    instructionType: string
   ): StandardSwapEvent | null {
     try {
       const discriminator = Array.from(instructionData.slice(0, 8));
@@ -283,19 +318,19 @@ export class RaydiumSwapParser {
         poolAddress,
         inputTokenAccount,
         outputTokenAccount,
-        inputVault,
-        outputVault,
+        intoVault,
+        outofVault,
       } = extractAccountInfo(accounts, [3, 4, 5, 6, 7]);
 
       return buildSwapEvent(
         poolAddress,
         "RAYDIUM_CPMM_" + type,
-        inputVault,
-        outputVault,
+        intoVault,
+        outofVault,
         inputTokenAccount,
         outputTokenAccount,
-        innerTokenAccounts,
-        instructionIndex
+        changedTokenMetas,
+        instructionType
       );
     } catch (error) {
       console.error("Error parsing Raydium CPMM swap:", error);
@@ -305,25 +340,23 @@ export class RaydiumSwapParser {
 
   private getAMMTokenMapping(
     type: string,
-    inputVault: string,
-    outputVault: string,
-    innerTokenAccounts: any[]
+    intoVault: string,
+    outofVault: string,
+    changedTokenMetas: any[]
   ) {
     let tokenIn: any;
     let tokenOut: any;
     if (type === "SWAP_BASE_IN") {
-      tokenIn = innerTokenAccounts.find(
-        (account) => account.addr === outputVault
+      tokenIn = changedTokenMetas.find(
+        (account) => account.addr === outofVault
       );
-      tokenOut = innerTokenAccounts.find(
-        (account) => account.addr === inputVault
+      tokenOut = changedTokenMetas.find(
+        (account) => account.addr === intoVault
       );
     } else if (type === "SWAP_BASE_OUT") {
-      tokenIn = innerTokenAccounts.find(
-        (account) => account.addr === inputVault
-      );
-      tokenOut = innerTokenAccounts.find(
-        (account) => account.addr === outputVault
+      tokenIn = changedTokenMetas.find((account) => account.addr === intoVault);
+      tokenOut = changedTokenMetas.find(
+        (account) => account.addr === outofVault
       );
     }
 

@@ -1,4 +1,4 @@
-import type { StandardSwapEvent } from "../../common/types";
+import type { StandardSwapEvent, TokenBalanceChange } from "../../common/types";
 
 export const isValidDiscriminator = (
   discriminator: number[],
@@ -12,37 +12,58 @@ export const extractAccountInfo = (accounts: any[], indices: number[]) => {
     poolAddress: accounts[indices[0]!]?.toBase58() || "",
     inputTokenAccount: accounts[indices[1]!]?.toBase58() || "",
     outputTokenAccount: accounts[indices[2]!]?.toBase58() || "",
-    inputVault: accounts[indices[3]!]?.toBase58() || "",
-    outputVault: accounts[indices[4]!]?.toBase58() || "",
+    intoVault: accounts[indices[3]!]?.toBase58() || "",
+    outofVault: accounts[indices[4]!]?.toBase58() || "",
   };
 };
 export const buildSwapEvent = (
   poolAddress: string,
   protocol: string,
-  inputVault: string,
-  outputVault: string,
+  intoVault: string,
+  outofVault: string,
   inputTokenAccount: string,
   outputTokenAccount: string,
-  innerTokenAccounts: any[],
-  instructionIndex: number
+  changedTokenMetas: any[],
+  instructionType: string
 ): StandardSwapEvent | null => {
-  const tokenIn = innerTokenAccounts.find(
-    (account) => account.addr === inputVault
-  );
-  const tokenOut = innerTokenAccounts.find(
-    (account) => account.addr === outputVault
-  );
+  let tokenIn;
+  let tokenOut;
+  let amountIn;
+  let amountOut;
+  if (instructionType === "inner") {
+    const tokenInAccount = changedTokenMetas.find(
+      (account) => account.addr === intoVault
+    );
+    const tokenOutAccount = changedTokenMetas.find(
+      (account) => account.addr === outofVault
+    );
+    tokenIn = tokenInAccount?.mint;
+    tokenOut = tokenOutAccount?.mint;
+    amountIn = tokenInAccount?.amount;
+    amountOut = tokenOutAccount?.amount;
+  } else {
+    const tokenInTransfer = changedTokenMetas.find(
+      (account) => account.source === inputTokenAccount
+    );
+    const tokenOutTransfer = changedTokenMetas.find(
+      (account) => account.destination === outputTokenAccount
+    );
+    tokenIn = tokenInTransfer?.mint;
+    tokenOut = tokenOutTransfer?.mint;
+    amountIn = tokenInTransfer?.amount;
+    amountOut = tokenOutTransfer?.amount;
+  }
 
   return {
     poolAddress,
     protocol,
-    tokenIn: tokenIn?.mint,
-    tokenOut: tokenOut?.mint,
-    amountIn: getAbsoluteAmount(tokenIn?.amount),
-    amountOut: getAbsoluteAmount(tokenOut?.amount),
+    tokenIn: tokenIn,
+    tokenOut: tokenOut,
+    amountIn: getAbsoluteAmount(amountIn),
+    amountOut: getAbsoluteAmount(amountOut),
     sender: inputTokenAccount,
     recipient: outputTokenAccount,
-    instructionIndex,
+    instructionType,
   };
 };
 

@@ -40,33 +40,36 @@ async function testAnalyzeSolanaTransaction() {
 
       //raydium
       // "dTLhNajxmKk5XxKhyMMrBhyUQh5EXe2U25iFM7HRxhtV2fdYQmNcbCsbir6FoNjFi8wiQCopGVthkN3oZFftEK7";
+      // "CqKyKSG7xpAsuSF12MLSzYx19CiNZBxhc6GuG9cpUx6TwZSsaSumtCjt97Hc3KV6up8MmHp4eELWRAbo2pGffms"; //手动套利(Priority fee+高额fee+反而亏钱)
+      // "CMkjuKkAtgUhyfzBqrVFg7FmDZvceDG1Ak5z6wEPv2kpgD2RzPDWpgP2DGRzDFC7n8cLDUTReaqgswwuA57ru9U"; //amm
       //cpmm
       // "3NZt3syTpsY74Dq8Y5sMn2v9k9qsqJSchVM25eB8ULD6SrHNxQGMtAEXSV8T5FWZjP5ojo65BJPtSPgNLSZGiB7r"; //+meteora dlmm
 
       //meteora
       // "bEESzTQw7L5RaZQAKK2U71f44wjWQQ9mwdFrBE6WuLESLrdZ3UJT2Fubq7ayKoSEwWYib4NKpoeKoHVJ4hHzV9V"; // pool program+dlmm 有趣
-      // "4FgSEC8WS49J7QG8u2xyC8SNWPBNrmgiZAKFR5VdTJ8ww2J6HTQs5zeotL7undCt9x1ZTYbq9avPfM854BaKUkqj"; // pool program+damm v2
+      "4FgSEC8WS49J7QG8u2xyC8SNWPBNrmgiZAKFR5VdTJ8ww2J6HTQs5zeotL7undCt9x1ZTYbq9avPfM854BaKUkqj"; // pool program+damm v2
 
-      //pumpfun
-      // "Ax2HVF3GAtzu1SthhSLF2AhVKJFRME7fYMcb1zQpCxu5UbzCfvjFzUgvXtQULYopLGLw5xupVbco8WdPZB12w5c"; //amm
+    //pumpfun
+    // "Ax2HVF3GAtzu1SthhSLF2AhVKJFRME7fYMcb1zQpCxu5UbzCfvjFzUgvXtQULYopLGLw5xupVbco8WdPZB12w5c"; //amm
+    // "58FtJG6T5fNa78qyUXDj5uqpmQEnFKg3xtFpy3H3JzP2x5ztxTFwzSn3tMcVnV1DkwxeCAuGnT8mQGBn1wDHYRHq";
 
-      //solfi
-      // "3nrmL1KmrsPKMZoXxbdMubReLTEWp3948Lbpo1A6SVPCiMMN193LkDTQceV22dmY1UK9LwGm2t3D5bXFVVSygVym"; // jupitet外层套利，所以未检测出来
-      // "3i4HtxGHKv5bXJcmaJias6L1sA5MfrqHsYRXcQ5LZymX3hQgjWKGRwKdz5eXxMZzidNG1qAX92mtGo7LTMNcrsqh"; //dlmm+whirlpool
-      // "5MSNYMM77T7aoDNhEYwjC4SyD5DyKJV5SMcDrMTVZFdjLSxkvUCzqyuMgWjQtQConSkXokzcjhmYzGvmwfwU6Ww6"; //whirlpool
+    //solfi
+    // "3nrmL1KmrsPKMZoXxbdMubReLTEWp3948Lbpo1A6SVPCiMMN193LkDTQceV22dmY1UK9LwGm2t3D5bXFVVSygVym"; // jupitet外层套利，所以未检测出来
+    // "3i4HtxGHKv5bXJcmaJias6L1sA5MfrqHsYRXcQ5LZymX3hQgjWKGRwKdz5eXxMZzidNG1qAX92mtGo7LTMNcrsqh"; //dlmm+whirlpool
+    // "5MSNYMM77T7aoDNhEYwjC4SyD5DyKJV5SMcDrMTVZFdjLSxkvUCzqyuMgWjQtQConSkXokzcjhmYzGvmwfwU6Ww6"; //whirlpool
 
-      // lifinity
-      // "5vt6tp4UBE64TH5bxTWcrZACcW3g9ruc8Cv2nhzFNfSBFuJs6qD2JRKnjUq7dCT8i857jMnhT25a4MaLtJ4imQWr";
-      // "nDDe4HrRnYzNEDFpoCjPhtF4FqHZZ22yDXbufNPTxb7Wi8zdYvtpKNSSwKU31yZRgMZihTnZ7XHzJVXjZg2mJdo";
-      // "uZ6U4SAYMuEnvPcQCFcSf7gmNf5TU13g4fmiNpQN6eKjJrR37VZhEZL71mgwxJbhVTdtzskTDt1ocUQ98PX3HTr";
+    // lifinity
+    // "5vt6tp4UBE64TH5bxTWcrZACcW3g9ruc8Cv2nhzFNfSBFuJs6qD2JRKnjUq7dCT8i857jMnhT25a4MaLtJ4imQWr";
+    // "nDDe4HrRnYzNEDFpoCjPhtF4FqHZZ22yDXbufNPTxb7Wi8zdYvtpKNSSwKU31yZRgMZihTnZ7XHzJVXjZg2mJdo";
+    // "uZ6U4SAYMuEnvPcQCFcSf7gmNf5TU13g4fmiNpQN6eKjJrR37VZhEZL71mgwxJbhVTdtzskTDt1ocUQ98PX3HTr";
 
-      // loaned first, then arb,有趣！！
-      // "4Y59CaeQKDxTkcUQS8kDRRBXYrJZygrrrWVSiAXWWu6x3vZjT38sMmF7CjhHB6uJsinRHXZy8WHcwTPq6whidfxJ";
-      // "23BUNbgXLWFWa8xy7GW4a6TXn4y2LZC7djeZUo3FQeNwkB1gAqEDqBLHDskvT75zfHH8dnuSiznLTVKMozUP1Ge7";
+    // loaned first, then arb,有趣！！
+    // "4Y59CaeQKDxTkcUQS8kDRRBXYrJZygrrrWVSiAXWWu6x3vZjT38sMmF7CjhHB6uJsinRHXZy8WHcwTPq6whidfxJ";
+    // "23BUNbgXLWFWa8xy7GW4a6TXn4y2LZC7djeZUo3FQeNwkB1gAqEDqBLHDskvT75zfHH8dnuSiznLTVKMozUP1Ge7";
 
-      // openbook
-      // "EyvUPqYuo6DCEkDVgZTLorEnH64BTehVcSiorXNBse1D4tmGanr78dV8AmL6jCjsazL9CidyTEmTwWAcWJfiUzo"; //atob
-      "5fdPfgLTHwRxAZzs48RuQVWqbLuefQwdfVM68Jqeqc23BJdjuM3tGadURHSW1b7se3gsTdFjniB1PPSqFnsaGa7X"; //btoa
+    // openbook
+    // "EyvUPqYuo6DCEkDVgZTLorEnH64BTehVcSiorXNBse1D4tmGanr78dV8AmL6jCjsazL9CidyTEmTwWAcWJfiUzo"; //atob
+    // "5fdPfgLTHwRxAZzs48RuQVWqbLuefQwdfVM68Jqeqc23BJdjuM3tGadURHSW1b7se3gsTdFjniB1PPSqFnsaGa7X"; //btoa
 
     // const transaction = await connection.getParsedTransaction(
     //   transactionSignature,

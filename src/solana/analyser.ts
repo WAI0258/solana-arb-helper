@@ -17,6 +17,7 @@ import {
   getProgramInfo,
   isDexProgramId,
 } from "../common/dex";
+import { TransferParser } from "./transfer";
 
 export class TransactionAnalyzer {
   private poolManager: PoolManager;
@@ -24,13 +25,14 @@ export class TransactionAnalyzer {
   private arbitrageDetector: ArbitrageDetector;
   private accountProcessor: AccountProcessor;
   private instructionProcessor: InstructionProcessor;
-
+  private transferParser: TransferParser;
   constructor() {
     this.poolManager = new PoolManager();
     this.swapParser = new SwapParser();
     this.arbitrageDetector = new ArbitrageDetector();
     this.accountProcessor = new AccountProcessor();
     this.instructionProcessor = new InstructionProcessor();
+    this.transferParser = new TransferParser();
   }
 
   public async analyzeSolanaTransaction(
@@ -68,12 +70,23 @@ export class TransactionAnalyzer {
         const dexProgram = getDexNameByProgramId(programIdString);
         const dexProgramInfo = getProgramInfo(programIdString);
 
-        // inner token accounts
-        const innerTokenAccountsWithBalanceChanges =
-          this.instructionProcessor.filterTokenAccountsForInstruction(
-            instruction,
+        let changedTokenMetas: any[] = [];
+        if (instruction.type === "inner") {
+          // inner token accounts
+          changedTokenMetas =
+            this.instructionProcessor.filterTokenAccountsForInstruction(
+              instruction,
+              tokenAccounts
+            );
+        } else {
+          const getInnerInstructions = allInstructions.filter(
+            (i) => i.outerInstructionIndex === instruction.instructionIndex
+          );
+          changedTokenMetas = this.transferParser.parseTransferEvent(
+            getInnerInstructions,
             tokenAccounts
           );
+        }
 
         const swapEvent = this.swapParser.parseSolanaSwapEvent(
           {
@@ -82,15 +95,9 @@ export class TransactionAnalyzer {
           },
           instruction.data,
           instruction.accounts,
-          innerTokenAccountsWithBalanceChanges,
-          instruction.instructionIndex // inner instruction index
+          changedTokenMetas,
+          instruction.type // inner instruction index
         );
-        // if (
-        //   tx.transaction.signatures[0] ==
-        //   "5H2jiE4ZC6bw6NcSU5cCZvSMJQtJjkAFwv9XkThF4ot3NAuW3kN9PbPDybVcp8bDgsMxFDUWDVMgFYyd2trS6kfa"
-        // ) {
-        //   console.log("swapEvent: ", swapEvent);
-        // }
         if (swapEvent) {
           swapEvents.push(swapEvent);
         }
@@ -103,12 +110,30 @@ export class TransactionAnalyzer {
         const poolAddress = swapEvent?.poolAddress;
 
         if (poolAddress) {
-          const tokenIn = innerTokenAccountsWithBalanceChanges.find(
-            (account) => account.mint === swapEvent.tokenIn
-          );
-          const tokenOut = innerTokenAccountsWithBalanceChanges.find(
-            (account) => account.mint === swapEvent.tokenOut
-          );
+          let tokenIn;
+          let tokenOut;
+          if (instruction.type === "inner") {
+            tokenIn = changedTokenMetas.find(
+              (account) => account.mint === swapEvent.tokenIn
+            );
+            tokenOut = changedTokenMetas.find(
+              (account) => account.mint === swapEvent.tokenOut
+            );
+          } else {
+            tokenIn = changedTokenMetas.find(
+              (transfer) => transfer.source === swapEvent.sender
+            );
+            tokenOut = changedTokenMetas.find(
+              (transfer) => transfer.destination === swapEvent.recipient
+            );
+            if (!tokenIn || !tokenOut) {
+              console.log("swapEvent: ", swapEvent);
+              console.log("changedTokenMetas: ", changedTokenMetas);
+              console.log("tokenIn: ", tokenIn);
+              console.log("tokenOut: ", tokenOut);
+            }
+          }
+
           const poolInfo = await this.poolManager.requestTxPoolInfo(
             dexProgramInfo,
             poolAddress,

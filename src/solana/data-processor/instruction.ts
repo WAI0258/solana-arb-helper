@@ -8,6 +8,9 @@ export interface InstructionInfo {
   data: Buffer;
   accounts: any[];
   instructionIndex: number;
+  outerInstructionIndex: number;
+  stackHeight: number;
+  type: "outer" | "inner";
 }
 
 export class InstructionProcessor {
@@ -21,8 +24,24 @@ export class InstructionProcessor {
    * Get all instructions from a transaction
    */
   public getAllInstructions(tx: ParsedTransactionWithMeta): InstructionInfo[] {
-    const innerInstructions = tx.meta?.innerInstructions || [];
     const allInstructions: InstructionInfo[] = [];
+
+    // get compiled instructions from transaction message
+    const message = tx.transaction.message as any;
+    const compiledInstructions = message.compiledInstructions || [];
+
+    for (let i = 0; i < compiledInstructions.length; i++) {
+      const instruction = compiledInstructions[i];
+      if (!instruction) continue;
+
+      const instructionInfo = this.parseCompiledInstruction(instruction, i, tx);
+      if (instructionInfo) {
+        allInstructions.push(instructionInfo);
+      }
+    }
+
+    // get inner instructions
+    const innerInstructions = tx.meta?.innerInstructions || [];
 
     for (const innerInstruction of innerInstructions) {
       if (!innerInstruction) continue;
@@ -31,7 +50,11 @@ export class InstructionProcessor {
         const instruction = innerInstruction.instructions[j];
         if (!instruction) continue;
 
-        const instructionInfo = this.parseInstruction(instruction, j);
+        const instructionInfo = this.parseInstruction(
+          instruction,
+          j,
+          innerInstruction.index
+        );
         if (instructionInfo) {
           // Resolve programId if it's an index
           if (typeof instructionInfo.programId === "number") {
@@ -67,11 +90,73 @@ export class InstructionProcessor {
   }
 
   /**
+   * Parse compiled instruction
+   */
+  private parseCompiledInstruction(
+    instruction: any,
+    index: number,
+    tx: ParsedTransactionWithMeta
+  ): InstructionInfo | null {
+    try {
+      let dataBuffer = Buffer.from([]);
+      if ("data" in instruction && instruction.data) {
+        if (
+          typeof instruction.data === "string" &&
+          this.isBase58(instruction.data)
+        ) {
+          try {
+            dataBuffer = Buffer.from(bs58.decode(instruction.data));
+          } catch {
+            dataBuffer = Buffer.from(instruction.data, "base64");
+          }
+        } else {
+          dataBuffer = Buffer.from(instruction.data);
+        }
+      }
+
+      // Get program ID from account keys
+      const programIdIndex = instruction.programIdIndex;
+      const programId = this.accountProcessor.getAccountKeyByIndex(
+        tx,
+        programIdIndex
+      );
+      if (!programId) {
+        return null;
+      }
+
+      // Resolve account indices to actual account keys
+      const accountIndices = instruction.accountKeyIndexes || [];
+      const accounts = accountIndices
+        .map((accountIndex: number) =>
+          this.accountProcessor.getAccountKeyByIndex(tx, accountIndex)
+        )
+        .filter((account: any) => account !== null);
+
+      return {
+        programId,
+        data: dataBuffer,
+        accounts,
+        instructionIndex: index,
+        type: "outer",
+        stackHeight: 1,
+        outerInstructionIndex: -1,
+      };
+    } catch (error) {
+      console.error(
+        `Error parsing compiled instruction at index ${index}:`,
+        error
+      );
+      return null;
+    }
+  }
+
+  /**
    * Parse individual instruction
    */
   private parseInstruction(
     instruction: any,
-    index: number
+    index: number,
+    outerInstructionIndex: number
   ): InstructionInfo | null {
     try {
       let dataBuffer = Buffer.from([]);
@@ -100,6 +185,9 @@ export class InstructionProcessor {
         data: dataBuffer,
         accounts: instruction.accounts || [],
         instructionIndex: index,
+        type: "inner",
+        stackHeight: instruction.stackHeight,
+        outerInstructionIndex,
       };
     } catch (error) {
       console.error(`Error parsing instruction at index ${index}:`, error);

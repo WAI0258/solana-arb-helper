@@ -12,8 +12,8 @@ export class PumpFunSwapParser {
   parseSwap(
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number,
+    changedTokenMetas: any[],
+    instructionType: string,
     dexType?: string
   ): StandardSwapEvent | null {
     switch (dexType) {
@@ -21,15 +21,15 @@ export class PumpFunSwapParser {
         return this.parseAMMSwap(
           instructionData,
           accounts,
-          innerTokenAccounts,
-          instructionIndex
+          changedTokenMetas,
+          instructionType
         );
       case "PumpFun":
         return this.parsePumpFunSwap(
           instructionData,
           accounts,
-          innerTokenAccounts,
-          instructionIndex
+          changedTokenMetas,
+          instructionType
         );
       default:
         return null;
@@ -39,8 +39,8 @@ export class PumpFunSwapParser {
   private parseAMMSwap(
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number
+    changedTokenMetas: any[],
+    instructionType: string
   ): StandardSwapEvent | null {
     try {
       const discriminator = Array.from(instructionData.slice(0, 8));
@@ -50,8 +50,10 @@ export class PumpFunSwapParser {
       };
 
       let type = "";
+      let accountIndexs = [0, 5, 6, 7, 8];
       if (isValidDiscriminator(discriminator, expectedDiscriminator.buy)) {
         type = "PumpFun_AMM_BUY";
+        accountIndexs = [0, 6, 5, 8, 7];
       } else if (
         isValidDiscriminator(discriminator, expectedDiscriminator.sell)
       ) {
@@ -63,18 +65,18 @@ export class PumpFunSwapParser {
         poolAddress,
         inputTokenAccount,
         outputTokenAccount,
-        inputVault,
-        outputVault,
-      } = extractAccountInfo(accounts, [0, 7, 8, 5, 6]);
+        intoVault,
+        outofVault,
+      } = extractAccountInfo(accounts, accountIndexs);
       return buildSwapEvent(
         poolAddress,
         type,
+        intoVault,
+        outofVault,
         inputTokenAccount,
         outputTokenAccount,
-        inputVault,
-        outputVault,
-        innerTokenAccounts,
-        instructionIndex
+        changedTokenMetas,
+        instructionType
       );
     } catch (error) {
       console.error("Error parsing PumpFun swap:", error);
@@ -85,8 +87,8 @@ export class PumpFunSwapParser {
   private parsePumpFunSwap(
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number
+    changedTokenMetas: any[],
+    instructionType: string
   ): StandardSwapEvent | null {
     try {
       const discriminator = Array.from(instructionData.slice(0, 8));
@@ -107,18 +109,18 @@ export class PumpFunSwapParser {
         poolAddress,
         inputTokenAccount,
         outputTokenAccount,
-        inputVault,
-        outputVault,
+        intoVault,
+        outofVault,
       } = extractAccountInfo(accounts, [0, 5, 6, 7, 8]);
       return buildSwapEvent(
         poolAddress,
         type,
         inputTokenAccount,
         outputTokenAccount,
-        inputVault,
-        outputVault,
-        innerTokenAccounts,
-        instructionIndex
+        intoVault,
+        outofVault,
+        changedTokenMetas,
+        instructionType
       );
     } catch (error) {
       console.error("Error parsing PumpFun swap:", error);

@@ -9,8 +9,8 @@ export class LifinitySwapParser {
   parseSwap(
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number,
+    changedTokenMetas: any[],
+    instructionType: string,
     dexType?: string
   ): StandardSwapEvent | null {
     switch (dexType) {
@@ -18,16 +18,16 @@ export class LifinitySwapParser {
         return this.parseAMMSwap(
           instructionData,
           accounts,
-          innerTokenAccounts,
-          instructionIndex,
+          changedTokenMetas,
+          instructionType,
           true
         );
       case "MMaaS_V2":
         return this.parseAMMSwap(
           instructionData,
           accounts,
-          innerTokenAccounts,
-          instructionIndex,
+          changedTokenMetas,
+          instructionType,
           false
         );
       default:
@@ -38,8 +38,8 @@ export class LifinitySwapParser {
   private parseAMMSwap(
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number,
+    changedTokenMetas: any[],
+    instructionType: string,
     isV1: boolean
   ): StandardSwapEvent | null {
     try {
@@ -56,18 +56,18 @@ export class LifinitySwapParser {
         poolAddress,
         inputTokenAccount,
         outputTokenAccount,
-        inputVault,
-        outputVault,
+        intoVault,
+        outofVault,
       } = extractAccountInfo(accounts, [1, 5, 6, 3, 4]);
       return buildSwapEvent(
         poolAddress,
         type,
         inputTokenAccount,
         outputTokenAccount,
-        inputVault,
-        outputVault,
-        innerTokenAccounts,
-        instructionIndex
+        intoVault,
+        outofVault,
+        changedTokenMetas,
+        instructionType
       );
     } catch (error) {
       console.error("Error parsing Lifinity swap:", error);

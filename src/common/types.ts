@@ -42,17 +42,18 @@ export interface StandardSwapEvent {
   amountOut: bigint;
   sender: string;
   recipient: string;
-  instructionIndex: number;
+  instructionType: string;
 }
 
-// Token Transfer
-export interface TokenTransfer {
-  token: string;
-  from: string;
-  to: string;
+export interface StandardTransferEvent {
+  type: "transfer" | "transferChecked";
+  programId: string;
+  authority: string;
+  source: string;
+  destination: string;
   amount: bigint;
   decimals: number;
-  symbol?: string;
+  mint: string;
 }
 
 // Token Balance Change

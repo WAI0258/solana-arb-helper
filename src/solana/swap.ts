@@ -23,8 +23,8 @@ export class SwapParser {
     },
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number
+    changedTokenMetas: any[],
+    instructionType: string
   ): StandardSwapEvent | null {
     try {
       switch (dexProgram.dexProgram) {
@@ -32,55 +32,55 @@ export class SwapParser {
           return this.raydiumParser.parseSwap(
             instructionData,
             accounts,
-            innerTokenAccounts,
-            instructionIndex,
+            changedTokenMetas,
+            instructionType,
             dexProgram.dexProgramInfo?.type
           );
         case "ORCA":
           return this.orcaParser.parseSwap(
             instructionData,
             accounts,
-            innerTokenAccounts,
-            instructionIndex,
+            changedTokenMetas,
+            instructionType,
             dexProgram.dexProgramInfo?.type
           );
         case "METEORA":
           return this.meteoraParser.parseSwap(
             instructionData,
             accounts,
-            innerTokenAccounts,
-            instructionIndex,
+            changedTokenMetas,
+            instructionType,
             dexProgram.dexProgramInfo?.type
           );
         case "SOLFI":
           return this.solfiParser.parseSwap(
             instructionData,
             accounts,
-            innerTokenAccounts,
-            instructionIndex
+            changedTokenMetas,
+            instructionType
           );
         case "PUMPFUN":
           return this.pumpFunParser.parseSwap(
             instructionData,
             accounts,
-            innerTokenAccounts,
-            instructionIndex,
+            changedTokenMetas,
+            instructionType,
             dexProgram.dexProgramInfo?.type
           );
         case "LIFINITY":
           return this.lifinityParser.parseSwap(
             instructionData,
             accounts,
-            innerTokenAccounts,
-            instructionIndex,
+            changedTokenMetas,
+            instructionType,
             dexProgram.dexProgramInfo?.type
           );
         case "OPENBOOK":
           return this.openBookParser.parseSwap(
             instructionData,
             accounts,
-            innerTokenAccounts,
-            instructionIndex
+            changedTokenMetas,
+            instructionType
           );
         default:
           return null;

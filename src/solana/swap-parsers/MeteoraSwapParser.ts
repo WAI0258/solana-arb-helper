@@ -9,8 +9,8 @@ export class MeteoraSwapParser {
   parseSwap(
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number,
+    changedTokenMetas: any[],
+    instructionType: string,
     dexType?: string
   ): StandardSwapEvent | null {
     switch (dexType) {
@@ -18,31 +18,31 @@ export class MeteoraSwapParser {
         return this.parseDLMMSwap(
           instructionData,
           accounts,
-          innerTokenAccounts,
-          instructionIndex
+          changedTokenMetas,
+          instructionType
         );
       case "DAMM":
         return this.parseDAMMSwap(
           instructionData,
           accounts,
-          innerTokenAccounts,
-          instructionIndex,
+          changedTokenMetas,
+          instructionType,
           "DAMM"
         );
       case "DAMM_V2":
         return this.parseDAMMSwap(
           instructionData,
           accounts,
-          innerTokenAccounts,
-          instructionIndex,
+          changedTokenMetas,
+          instructionType,
           "DAMM_V2"
         );
       case "DBC":
         return this.parseDBCSwap(
           instructionData,
           accounts,
-          innerTokenAccounts,
-          instructionIndex
+          changedTokenMetas,
+          instructionType
         );
       default:
         return null;
@@ -51,8 +51,8 @@ export class MeteoraSwapParser {
   private parseDLMMSwap(
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number
+    changedTokenMetas: any[],
+    instructionType: string
   ): StandardSwapEvent | null {
     try {
       const discriminator = Array.from(instructionData.slice(0, 8));
@@ -84,37 +84,37 @@ export class MeteoraSwapParser {
         return null;
       }
 
-      const inputVaultIndex =
-        innerTokenAccounts.find((a) => a.addr === accounts[4].toBase58())
+      const intoVaultIndex =
+        changedTokenMetas.find((a) => a.addr === accounts[4].toBase58())
           ?.mint ===
-        innerTokenAccounts.find((a) => a.addr === accounts[2].toBase58())?.mint
+        changedTokenMetas.find((a) => a.addr === accounts[2].toBase58())?.mint
           ? 2
           : 3;
-      const outputVaultIndex = inputVaultIndex === 2 ? 3 : 2;
+      const outofVaultIndex = intoVaultIndex === 2 ? 3 : 2;
 
       const {
         poolAddress,
         inputTokenAccount,
         outputTokenAccount,
-        inputVault,
-        outputVault,
+        intoVault,
+        outofVault,
       } = extractAccountInfo(accounts, [
         0,
         4,
         5,
-        inputVaultIndex,
-        outputVaultIndex,
+        intoVaultIndex,
+        outofVaultIndex,
       ]);
 
       return buildSwapEvent(
         poolAddress,
         "METEORA_DLMM_" + type,
-        inputVault,
-        outputVault,
+        intoVault,
+        outofVault,
         inputTokenAccount,
         outputTokenAccount,
-        innerTokenAccounts,
-        instructionIndex
+        changedTokenMetas,
+        instructionType
       );
     } catch (error) {
       console.error("Error parsing Meteora DLMM swap:", error);
@@ -125,8 +125,8 @@ export class MeteoraSwapParser {
   private parseDAMMSwap(
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number,
+    changedTokenMetas: any[],
+    instructionType: string,
     dexType: string
   ): StandardSwapEvent | null {
     try {
@@ -140,42 +140,42 @@ export class MeteoraSwapParser {
         candidateIndices = [1, 2, 3, 4, 5];
       }
 
-      const inputVaultIndex =
-        innerTokenAccounts.find(
+      const intoVaultIndex =
+        changedTokenMetas.find(
           (a) => a.addr === accounts[candidateIndices[1]!].toBase58()
         )?.mint ===
-        innerTokenAccounts.find(
+        changedTokenMetas.find(
           (a) => a.addr === accounts[candidateIndices[3]!].toBase58()
         )?.mint
           ? candidateIndices[3]!
           : candidateIndices[4]!;
-      const outputVaultIndex =
-        inputVaultIndex === candidateIndices[3]!
+      const outofVaultIndex =
+        intoVaultIndex === candidateIndices[3]!
           ? candidateIndices[4]!
           : candidateIndices[3]!;
       const {
         poolAddress,
         inputTokenAccount,
         outputTokenAccount,
-        inputVault,
-        outputVault,
+        intoVault,
+        outofVault,
       } = extractAccountInfo(accounts, [
         candidateIndices[0]!,
         candidateIndices[1]!,
         candidateIndices[2]!,
-        inputVaultIndex,
-        outputVaultIndex,
+        intoVaultIndex,
+        outofVaultIndex,
       ]);
 
       return buildSwapEvent(
         poolAddress,
         "METEORA_" + dexType + "_SWAP",
-        inputVault,
-        outputVault,
+        intoVault,
+        outofVault,
         inputTokenAccount,
         outputTokenAccount,
-        innerTokenAccounts,
-        instructionIndex
+        changedTokenMetas,
+        instructionType
       );
     } catch (error) {
       console.error("Error parsing Meteora DAMM swap:", error);
@@ -186,8 +186,8 @@ export class MeteoraSwapParser {
   private parseDBCSwap(
     instructionData: Buffer,
     accounts: any[],
-    innerTokenAccounts: any[],
-    instructionIndex: number
+    changedTokenMetas: any[],
+    instructionType: string
   ): StandardSwapEvent | null {
     const discriminator = Array.from(instructionData.slice(0, 8));
     const expectedDiscriminator = [248, 198, 158, 145, 225, 117, 135, 200];
@@ -198,18 +198,18 @@ export class MeteoraSwapParser {
       poolAddress,
       inputTokenAccount,
       outputTokenAccount,
-      inputVault,
-      outputVault,
+      intoVault,
+      outofVault,
     } = extractAccountInfo(accounts, [2, 3, 4, 6, 5]);
     return buildSwapEvent(
       poolAddress,
       "METEORA_DBC_SWAP",
-      inputVault,
-      outputVault,
+      intoVault,
+      outofVault,
       inputTokenAccount,
       outputTokenAccount,
-      innerTokenAccounts,
-      instructionIndex
+      changedTokenMetas,
+      instructionType
     );
   }
 }

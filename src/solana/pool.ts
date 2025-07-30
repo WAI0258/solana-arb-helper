@@ -7,8 +7,8 @@ export class PoolManager {
   public async requestTxPoolInfo(
     dexProgramInfo: DexProgram | null,
     poolAddress: string,
-    tokenIn: TokenBalanceChange,
-    tokenOut: TokenBalanceChange,
+    tokenIn: any,
+    tokenOut: any,
     txSignature: string
   ): Promise<ExtendedPoolInfo | null> {
     const cachedPool = cacheManager.getPool(poolAddress);
