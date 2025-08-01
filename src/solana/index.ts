@@ -1,12 +1,6 @@
-import { Connection } from "@solana/web3.js";
-
 import type {
-  ExtendedPoolInfo,
   StandardSwapEvent,
   TokenBalanceChange,
-  EdgeInfo,
-  CycleEdge,
-  ArbitrageCycle,
   ArbitrageInfo,
   BlockAnalysisResult,
 } from "../common/types";
@@ -14,55 +8,55 @@ import type {
 import { ArbitrageDetector } from "./arbitrage";
 import { TransactionAnalyzer } from "./analyser";
 
+export { ArbitrageDetector, TransactionAnalyzer };
+
+export type {
+  StandardSwapEvent,
+  TokenBalanceChange,
+  ArbitrageInfo,
+  BlockAnalysisResult,
+};
+
 export class SolanaArbHelper {
-  public readonly connection: Connection;
   private arbitrageDetector: ArbitrageDetector;
   private transactionAnalyzer: TransactionAnalyzer;
 
-  constructor(rpcUrl: string) {
-    this.connection = new Connection(rpcUrl, "confirmed");
+  constructor() {
     this.arbitrageDetector = new ArbitrageDetector();
     this.transactionAnalyzer = new TransactionAnalyzer();
   }
 
-  public buildSolanaSwapGraph(
-    swapEvents: StandardSwapEvent[]
-  ): Map<string, Map<string, EdgeInfo>> {
-    return this.arbitrageDetector.buildSolanaSwapGraph(swapEvents);
-  }
-
-  public calculateSolanaSwapGraphTokenChanges(
-    graph: Map<string, Map<string, EdgeInfo>>
-  ): Map<string, bigint> {
-    return this.arbitrageDetector.calculateSolanaSwapGraphTokenChanges(graph);
-  }
-
-  public findSolanaArbitrageCycles(
-    swapEvents: StandardSwapEvent[]
-  ): ArbitrageCycle[] {
-    return this.arbitrageDetector.findSolanaArbitrageCycles(swapEvents);
-  }
-
-  public validateSolanaSwapGraphTokenChanges(
-    graph: Map<string, Map<string, EdgeInfo>>
-  ): { isValid: boolean; profitToken?: string } {
-    return this.arbitrageDetector.validateSolanaSwapGraphTokenChanges(graph);
-  }
-
-  public formatSolanaTokenChanges(
-    tokenChanges: Map<string, bigint> | Record<string, string>
-  ): Record<string, string> {
-    return this.arbitrageDetector.formatSolanaTokenChanges(tokenChanges);
-  }
-
-  public getSolanaArbitrageInfo(swapEvents: StandardSwapEvent[]): {
-    arbitrageCycles: ArbitrageCycle[];
+  public detectArbitrage(swapEvents: StandardSwapEvent[]): {
     isArbitrage: boolean;
+    cycles: any[];
+    profitToken?: string;
+    profitAmount?: bigint;
   } {
-    return this.arbitrageDetector.getSolanaArbitrageInfo(swapEvents);
+    const { arbitrageCycles, isArbitrage } =
+      this.arbitrageDetector.getSolanaArbitrageInfo(swapEvents);
+
+    if (!isArbitrage || arbitrageCycles.length === 0) {
+      return { isArbitrage: false, cycles: [] };
+    }
+
+    const graph = this.arbitrageDetector.buildSolanaSwapGraph(swapEvents);
+    const { profitToken } =
+      this.arbitrageDetector.validateSolanaSwapGraphTokenChanges(graph);
+    const tokenChanges =
+      this.arbitrageDetector.calculateSolanaSwapGraphTokenChanges(graph);
+    const profitAmount = profitToken
+      ? tokenChanges.get(profitToken)
+      : undefined;
+
+    return {
+      isArbitrage: true,
+      cycles: arbitrageCycles,
+      profitToken,
+      profitAmount,
+    };
   }
 
-  public async analyzeSolanaTransaction(
+  public async analyzeTransaction(
     tx: any,
     slot: number,
     previousTransactions: Map<string, { signature: string; slot: number }[]>
@@ -83,28 +77,11 @@ export class SolanaArbHelper {
     );
   }
 
-  public async analyzeSolanaBlock(
-    slot: number,
-    timestamp: Date,
-    transactions: any[]
-  ): Promise<BlockAnalysisResult | null> {
-    return this.transactionAnalyzer.analyzeSolanaBlock(
-      slot,
-      timestamp,
-      transactions
-    );
+  public get detector() {
+    return this.arbitrageDetector;
+  }
+
+  public get analyzer() {
+    return this.transactionAnalyzer;
   }
 }
-
-export type {
-  ExtendedPoolInfo,
-  StandardSwapEvent,
-  TokenBalanceChange,
-  EdgeInfo,
-  CycleEdge,
-  ArbitrageCycle,
-  ArbitrageInfo,
-  BlockAnalysisResult,
-};
-
-export { ArbitrageDetector, TransactionAnalyzer };

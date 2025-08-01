@@ -5,6 +5,9 @@ import {
   isValidDiscriminator,
 } from "./utility";
 
+const LIFINITY_DISCRIMINATOR = [248, 198, 158, 145, 225, 117, 135, 200];
+const ACCOUNT_INDICES = [1, 3, 4, 5, 6];
+
 export class LifinitySwapParser {
   parseSwap(
     instructionData: Buffer,
@@ -44,28 +47,20 @@ export class LifinitySwapParser {
   ): StandardSwapEvent | null {
     try {
       const discriminator = Array.from(instructionData.slice(0, 8));
-      const expectedDiscriminator = [248, 198, 158, 145, 225, 117, 135, 200];
-      if (!isValidDiscriminator(discriminator, expectedDiscriminator)) {
+      if (!isValidDiscriminator(discriminator, LIFINITY_DISCRIMINATOR)) {
         return null;
       }
-      let type = "Lifinity_AMM_SWAP_V2";
-      if (isV1) {
-        type = "Lifinity_AMM_SWAP_V1";
-      }
-      const {
-        poolAddress,
-        inputTokenAccount,
-        outputTokenAccount,
-        intoVault,
-        outofVault,
-      } = extractAccountInfo(accounts, [1, 3, 4, 5, 6]);
+
+      const protocol = isV1 ? "Lifinity_AMM_SWAP_V1" : "Lifinity_AMM_SWAP_V2";
+      const accountInfo = extractAccountInfo(accounts, ACCOUNT_INDICES);
+
       return buildSwapEvent(
-        poolAddress,
-        type,
-        intoVault,
-        outofVault,
-        inputTokenAccount,
-        outputTokenAccount,
+        accountInfo.poolAddress,
+        protocol,
+        accountInfo.intoVault,
+        accountInfo.outofVault,
+        accountInfo.inputTokenAccount,
+        accountInfo.outputTokenAccount,
         changedTokenMetas,
         instructionType
       );

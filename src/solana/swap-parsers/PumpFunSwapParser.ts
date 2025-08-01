@@ -8,6 +8,16 @@ import {
   buildSwapEvent,
 } from "./utility";
 
+const PUMPFUN_DISCRIMINATORS = {
+  buy: [102, 6, 61, 18, 1, 218, 235, 234],
+  sell: [51, 230, 133, 164, 1, 127, 131, 173],
+};
+
+const ACCOUNT_INDICES = {
+  buy: [0, 6, 5, 8, 7],
+  sell: [0, 5, 6, 7, 8],
+};
+
 export class PumpFunSwapParser {
   parseSwap(
     instructionData: Buffer,
@@ -44,37 +54,31 @@ export class PumpFunSwapParser {
   ): StandardSwapEvent | null {
     try {
       const discriminator = Array.from(instructionData.slice(0, 8));
-      const expectedDiscriminator = {
-        buy: [102, 6, 61, 18, 1, 218, 235, 234],
-        sell: [51, 230, 133, 164, 1, 127, 131, 173],
-      };
 
-      let type = "";
-      let accountIndexs = [0, 5, 6, 7, 8];
-      if (isValidDiscriminator(discriminator, expectedDiscriminator.buy)) {
-        type = "PumpFun_AMM_BUY";
-        accountIndexs = [0, 6, 5, 8, 7];
+      let protocol: string;
+      let accountIndices: number[];
+
+      if (isValidDiscriminator(discriminator, PUMPFUN_DISCRIMINATORS.buy)) {
+        protocol = "PumpFun_AMM_BUY";
+        accountIndices = ACCOUNT_INDICES.buy;
       } else if (
-        isValidDiscriminator(discriminator, expectedDiscriminator.sell)
+        isValidDiscriminator(discriminator, PUMPFUN_DISCRIMINATORS.sell)
       ) {
-        type = "PumpFun_AMM_SELL";
+        protocol = "PumpFun_AMM_SELL";
+        accountIndices = ACCOUNT_INDICES.sell;
       } else {
         return null;
       }
-      const {
-        poolAddress,
-        inputTokenAccount,
-        outputTokenAccount,
-        intoVault,
-        outofVault,
-      } = extractAccountInfo(accounts, accountIndexs);
+
+      const accountInfo = extractAccountInfo(accounts, accountIndices);
+
       return buildSwapEvent(
-        poolAddress,
-        type,
-        intoVault,
-        outofVault,
-        inputTokenAccount,
-        outputTokenAccount,
+        accountInfo.poolAddress,
+        protocol,
+        accountInfo.intoVault,
+        accountInfo.outofVault,
+        accountInfo.inputTokenAccount,
+        accountInfo.outputTokenAccount,
         changedTokenMetas,
         instructionType
       );
@@ -92,33 +96,31 @@ export class PumpFunSwapParser {
   ): StandardSwapEvent | null {
     try {
       const discriminator = Array.from(instructionData.slice(0, 8));
-      const expectedDiscriminator = {
-        buy: [102, 6, 61, 18, 1, 218, 235, 234],
-        sell: [51, 230, 133, 164, 1, 127, 131, 173],
-      };
 
-      let type = "";
-      if (isValidDiscriminator(discriminator, expectedDiscriminator.buy)) {
-        type = "PumpFun_BUY";
+      let protocol: string;
+      let accountIndices: number[];
+
+      if (isValidDiscriminator(discriminator, PUMPFUN_DISCRIMINATORS.buy)) {
+        protocol = "PumpFun_SWAP_BUY";
+        accountIndices = ACCOUNT_INDICES.buy;
       } else if (
-        isValidDiscriminator(discriminator, expectedDiscriminator.sell)
+        isValidDiscriminator(discriminator, PUMPFUN_DISCRIMINATORS.sell)
       ) {
-        type = "PumpFun_SELL";
+        protocol = "PumpFun_SWAP_SELL";
+        accountIndices = ACCOUNT_INDICES.sell;
+      } else {
+        return null;
       }
-      const {
-        poolAddress,
-        inputTokenAccount,
-        outputTokenAccount,
-        intoVault,
-        outofVault,
-      } = extractAccountInfo(accounts, [0, 5, 6, 7, 8]);
+
+      const accountInfo = extractAccountInfo(accounts, accountIndices);
+
       return buildSwapEvent(
-        poolAddress,
-        type,
-        intoVault,
-        outofVault,
-        inputTokenAccount,
-        outputTokenAccount,
+        accountInfo.poolAddress,
+        protocol,
+        accountInfo.intoVault,
+        accountInfo.outofVault,
+        accountInfo.inputTokenAccount,
+        accountInfo.outputTokenAccount,
         changedTokenMetas,
         instructionType
       );

@@ -6,6 +6,29 @@ import {
   buildSwapEvent,
 } from "./utility";
 
+const CURVE_DISCRIMINATOR = 9;
+
+const CLMM_DISCRIMINATORS = {
+  swap: [248, 198, 158, 145, 225, 117, 135, 200],
+  swap_router_base_in: [69, 125, 115, 218, 245, 186, 242, 196],
+  swap_v2: [43, 4, 237, 11, 26, 201, 30, 98],
+};
+
+const AMM_DISCRIMINATORS = {
+  swapBaseIn: 9,
+  swapBaseOut: 11,
+};
+
+const CPMM_DISCRIMINATORS = {
+  swap_base_input: [143, 190, 90, 218, 196, 30, 51, 222],
+  swap_base_output: [55, 217, 98, 86, 163, 74, 180, 173],
+};
+
+const ACCOUNT_INDICES = {
+  clmm: [2, 3, 4, 5, 6],
+  cpmm: [3, 4, 5, 6, 7],
+};
+
 export class RaydiumSwapParser {
   parseSwap(
     instructionData: Buffer,
@@ -55,8 +78,9 @@ export class RaydiumSwapParser {
     instructionType: string
   ): StandardSwapEvent | null {
     try {
-      const discriminator = instructionData.readUInt8(0);
-      if (discriminator.toString() !== "9") return null;
+      if (instructionData.readUInt8(0) !== CURVE_DISCRIMINATOR) {
+        return null;
+      }
 
       const authority = accounts[2]; // pool payer
       const user = accounts[accounts.length - 1]; // user token account(may be one of them)
@@ -73,13 +97,8 @@ export class RaydiumSwapParser {
       const outputPoolTokenAccount = poolTokenAccount.find(
         (account) => account.amount > 0
       );
-      const {
-        poolAddress,
-        inputTokenAccount,
-        outputTokenAccount,
-        intoVault,
-        outofVault,
-      } = {
+
+      const accountInfo = {
         poolAddress: accounts[1].toBase58(),
         inputTokenAccount: userTokenAccounts.filter(
           (account) => account.addr !== accounts[accounts.length - 2].toBase58()
@@ -91,20 +110,20 @@ export class RaydiumSwapParser {
 
       const { tokenIn, tokenOut } = this.getAMMTokenMapping(
         "SWAP_BASE_IN",
-        intoVault,
-        outofVault,
+        accountInfo.intoVault,
+        accountInfo.outofVault,
         changedTokenMetas
       );
 
       return {
-        poolAddress,
+        poolAddress: accountInfo.poolAddress,
         protocol: "RAYDIUM_CURVE_SWAP",
         tokenIn: tokenIn?.mint,
         tokenOut: tokenOut?.mint,
         amountIn: getAbsoluteAmount(tokenIn?.amount),
         amountOut: getAbsoluteAmount(tokenOut?.amount),
-        sender: inputTokenAccount,
-        recipient: outputTokenAccount,
+        sender: accountInfo.inputTokenAccount,
+        recipient: accountInfo.outputTokenAccount,
         instructionType,
       };
     } catch (error) {
@@ -121,44 +140,34 @@ export class RaydiumSwapParser {
   ): StandardSwapEvent | null {
     try {
       const discriminator = Array.from(instructionData.slice(0, 8));
-      const expectedDiscriminator = {
-        swap: [248, 198, 158, 145, 225, 117, 135, 200],
-        swap_router_base_in: [69, 125, 115, 218, 245, 186, 242, 196],
-        swap_v2: [43, 4, 237, 11, 26, 201, 30, 98],
-      };
 
-      let type = "";
-      if (isValidDiscriminator(discriminator, expectedDiscriminator.swap)) {
-        type = "RAYDIUM_CLMM_SWAP";
+      let protocol: string;
+      if (isValidDiscriminator(discriminator, CLMM_DISCRIMINATORS.swap)) {
+        protocol = "RAYDIUM_CLMM_SWAP";
       } else if (
         isValidDiscriminator(
           discriminator,
-          expectedDiscriminator.swap_router_base_in
+          CLMM_DISCRIMINATORS.swap_router_base_in
         )
       ) {
-        type = "RAYDIUM_CLMM_SWAP_ROUTER_BASE_IN";
+        protocol = "RAYDIUM_CLMM_SWAP_ROUTER_BASE_IN";
       } else if (
-        isValidDiscriminator(discriminator, expectedDiscriminator.swap_v2)
+        isValidDiscriminator(discriminator, CLMM_DISCRIMINATORS.swap_v2)
       ) {
-        type = "RAYDIUM_CLMM_SWAP_V2";
+        protocol = "RAYDIUM_CLMM_SWAP_V2";
       } else {
         return null;
       }
 
-      const {
-        poolAddress,
-        inputTokenAccount,
-        outputTokenAccount,
-        intoVault,
-        outofVault,
-      } = extractAccountInfo(accounts, [2, 3, 4, 5, 6]);
+      const accountInfo = extractAccountInfo(accounts, ACCOUNT_INDICES.clmm);
+
       return buildSwapEvent(
-        poolAddress,
-        type,
-        intoVault,
-        outofVault,
-        inputTokenAccount,
-        outputTokenAccount,
+        accountInfo.poolAddress,
+        protocol,
+        accountInfo.intoVault,
+        accountInfo.outofVault,
+        accountInfo.inputTokenAccount,
+        accountInfo.outputTokenAccount,
         changedTokenMetas,
         instructionType
       );
@@ -176,16 +185,12 @@ export class RaydiumSwapParser {
   ): StandardSwapEvent | null {
     try {
       const discriminator = instructionData.readUInt8(0);
-      const expectedDiscriminator = {
-        swapBaseIn: 9,
-        swapBaseOut: 11,
-      };
 
-      let type = "";
-      if (discriminator === expectedDiscriminator.swapBaseIn) {
-        type = "SWAP_BASE_IN";
-      } else if (discriminator === expectedDiscriminator.swapBaseOut) {
-        type = "SWAP_BASE_OUT";
+      let protocol: string;
+      if (discriminator === AMM_DISCRIMINATORS.swapBaseIn) {
+        protocol = "SWAP_BASE_IN";
+      } else if (discriminator === AMM_DISCRIMINATORS.swapBaseOut) {
+        protocol = "SWAP_BASE_OUT";
       } else {
         return null;
       }
@@ -194,13 +199,7 @@ export class RaydiumSwapParser {
       const user = accounts[accounts.length - 1]; // user token account(may be one of them)
 
       if (instructionType === "outer") {
-        const {
-          poolAddress,
-          inputTokenAccount,
-          outputTokenAccount,
-          intoVault,
-          outofVault,
-        } = {
+        const accountInfo = {
           poolAddress: accounts[1].toBase58(),
           inputTokenAccount: changedTokenMetas.find(
             (account) => account.authority === user.toBase58()
@@ -217,12 +216,12 @@ export class RaydiumSwapParser {
         };
 
         return buildSwapEvent(
-          poolAddress,
-          "RAYDIUM_AMM_" + type,
-          intoVault,
-          outofVault,
-          inputTokenAccount,
-          outputTokenAccount,
+          accountInfo.poolAddress,
+          "RAYDIUM_AMM_" + protocol,
+          accountInfo.intoVault,
+          accountInfo.outofVault,
+          accountInfo.inputTokenAccount,
+          accountInfo.outputTokenAccount,
           changedTokenMetas,
           instructionType
         );
@@ -236,19 +235,13 @@ export class RaydiumSwapParser {
         (account) => account.owner === authority.toBase58()
       );
       const inputPoolTokenAccount = poolTokenAccount.find((account) =>
-        type === "SWAP_BASE_IN" ? account.amount < 0 : account.amount > 0
+        protocol === "SWAP_BASE_IN" ? account.amount < 0 : account.amount > 0
       );
       const outputPoolTokenAccount = poolTokenAccount.find((account) =>
-        type === "SWAP_BASE_IN" ? account.amount > 0 : account.amount < 0
+        protocol === "SWAP_BASE_IN" ? account.amount > 0 : account.amount < 0
       );
 
-      const {
-        poolAddress,
-        inputTokenAccount,
-        outputTokenAccount,
-        intoVault,
-        outofVault,
-      } = {
+      const accountInfo = {
         poolAddress: accounts[1].toBase58(),
         inputTokenAccount: userTokenAccounts.filter(
           (account) => account.addr !== accounts[accounts.length - 2].toBase58()
@@ -259,21 +252,21 @@ export class RaydiumSwapParser {
       };
 
       const { tokenIn, tokenOut } = this.getAMMTokenMapping(
-        type,
-        intoVault,
-        outofVault,
+        protocol,
+        accountInfo.intoVault,
+        accountInfo.outofVault,
         changedTokenMetas
       );
 
       return {
-        poolAddress,
-        protocol: "RAYDIUM_AMM_" + type,
+        poolAddress: accountInfo.poolAddress,
+        protocol: "RAYDIUM_AMM_" + protocol,
         tokenIn: tokenIn?.mint,
         tokenOut: tokenOut?.mint,
         amountIn: getAbsoluteAmount(tokenIn?.amount),
         amountOut: getAbsoluteAmount(tokenOut?.amount),
-        sender: inputTokenAccount,
-        recipient: outputTokenAccount,
+        sender: accountInfo.inputTokenAccount,
+        recipient: accountInfo.outputTokenAccount,
         instructionType,
       };
     } catch (error) {
@@ -290,45 +283,32 @@ export class RaydiumSwapParser {
   ): StandardSwapEvent | null {
     try {
       const discriminator = Array.from(instructionData.slice(0, 8));
-      const expectedDiscriminator = {
-        swap_base_input: [143, 190, 90, 218, 196, 30, 51, 222],
-        swap_base_output: [55, 217, 98, 86, 163, 74, 180, 173],
-      };
 
-      let type = "";
+      let protocol: string;
       if (
-        isValidDiscriminator(
-          discriminator,
-          expectedDiscriminator.swap_base_input
-        )
+        isValidDiscriminator(discriminator, CPMM_DISCRIMINATORS.swap_base_input)
       ) {
-        type = "SWAP_BASE_INPUT";
+        protocol = "SWAP_BASE_INPUT";
       } else if (
         isValidDiscriminator(
           discriminator,
-          expectedDiscriminator.swap_base_output
+          CPMM_DISCRIMINATORS.swap_base_output
         )
       ) {
-        type = "SWAP_BASE_OUTPUT";
+        protocol = "SWAP_BASE_OUTPUT";
       } else {
         return null;
       }
 
-      const {
-        poolAddress,
-        inputTokenAccount,
-        outputTokenAccount,
-        intoVault,
-        outofVault,
-      } = extractAccountInfo(accounts, [3, 4, 5, 6, 7]);
+      const accountInfo = extractAccountInfo(accounts, ACCOUNT_INDICES.cpmm);
 
       return buildSwapEvent(
-        poolAddress,
-        "RAYDIUM_CPMM_" + type,
-        intoVault,
-        outofVault,
-        inputTokenAccount,
-        outputTokenAccount,
+        accountInfo.poolAddress,
+        "RAYDIUM_CPMM_" + protocol,
+        accountInfo.intoVault,
+        accountInfo.outofVault,
+        accountInfo.inputTokenAccount,
+        accountInfo.outputTokenAccount,
         changedTokenMetas,
         instructionType
       );

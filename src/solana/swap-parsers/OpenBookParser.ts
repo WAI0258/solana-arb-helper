@@ -6,6 +6,12 @@ import {
   buildSwapEvent,
 } from "./utility";
 
+const OPENBOOK_DISCRIMINATOR = [3, 44, 71, 3, 26, 199, 203, 85];
+const ACCOUNT_INDICES = {
+  bid: [2, 10, 9, 7, 6], // bid -> b2a
+  ask: [2, 9, 10, 6, 7], // ask -> a2b
+};
+
 export class OpenBookParser {
   parseSwap(
     instructionData: Buffer,
@@ -16,34 +22,27 @@ export class OpenBookParser {
   ): StandardSwapEvent | null {
     try {
       const discriminator = Array.from(instructionData.slice(0, 8));
-      const expectedDiscriminator = [3, 44, 71, 3, 26, 199, 203, 85];
-      if (!isValidDiscriminator(discriminator, expectedDiscriminator)) {
+      if (!isValidDiscriminator(discriminator, OPENBOOK_DISCRIMINATOR)) {
         return null;
       }
+
       const a2b = instructionData.readUInt8(8); // 0：bid->b2a, 1:ask->a2b
-      let type =
+      const protocol =
         a2b === 0
           ? "OPENBOOK_V2_PLACE_TAKE_ORDER_BID"
           : "OPENBOOK_V2_PLACE_TAKE_ORDER_ASK";
-      let accountIndexs = [2, 10, 9, 7, 6]; // b to a
-      if (a2b === 1) {
-        // 1: a to b
-        accountIndexs = [2, 9, 10, 6, 7];
-      }
-      const {
-        poolAddress,
-        inputTokenAccount,
-        outputTokenAccount,
-        intoVault,
-        outofVault,
-      } = extractAccountInfo(accounts, accountIndexs);
+      const accountIndices =
+        a2b === 1 ? ACCOUNT_INDICES.ask : ACCOUNT_INDICES.bid;
+
+      const accountInfo = extractAccountInfo(accounts, accountIndices);
+
       return buildSwapEvent(
-        poolAddress,
-        type,
-        intoVault,
-        outofVault,
-        inputTokenAccount,
-        outputTokenAccount,
+        accountInfo.poolAddress,
+        protocol,
+        accountInfo.intoVault,
+        accountInfo.outofVault,
+        accountInfo.inputTokenAccount,
+        accountInfo.outputTokenAccount,
         changedTokenMetas,
         instructionType
       );

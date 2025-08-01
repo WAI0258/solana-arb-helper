@@ -14,7 +14,7 @@ export interface BaseSwapParser {
     changedTokenMetas: any[],
     instructionType: string,
     dexType?: string
-  ): StandardSwapEvent | null;
+  ): StandardSwapEvent | StandardSwapEvent[] | null;
 }
 
 export class SwapParserFactory {

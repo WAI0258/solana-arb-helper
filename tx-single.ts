@@ -35,19 +35,22 @@ async function testAnalyzeSolanaTransaction() {
       // "3o5HJFNmuVXBjtjaNacmweqsGGfMFvgJq6zqzBeds51AzY98WxUvqq5bnUCGTDckku6KAoLavfNSDnDGoDtDhM6t";
       // "Uxj6SkjrAy9mz1PECfaSb9K24ATesFyJn3SkwjyF7k4n3pVNmEs6CEe2UKzbwcycHPebfrHMUF8g53MCwQhmzB5"; //route
       //v2
-      // "BgAA6JLqELmZBrecH2bBc7QjKcRu3Dnr4kzHX4dQSSBSZxBo2zKX1FfQyPESktyZR29YDyYqMmrV9fYaJGGeXcH"; // !!!未检测套利
-      // "2oe9zER9xx7dnYQNvop4WpCmPjsXmUjF6Q1aAFaEhvRSkEumqyRVnzEXCrBESBSZ56SrCDUEvU4VzHnt24aK2kSb"; // adn whirlpool
+      "BgAA6JLqELmZBrecH2bBc7QjKcRu3Dnr4kzHX4dQSSBSZxBo2zKX1FfQyPESktyZR29YDyYqMmrV9fYaJGGeXcH"; // !!!未检测套利
+    // "2oe9zER9xx7dnYQNvop4WpCmPjsXmUjF6Q1aAFaEhvRSkEumqyRVnzEXCrBESBSZ56SrCDUEvU4VzHnt24aK2kSb"; // adn whirlpool
 
-      //raydium
-      // "dTLhNajxmKk5XxKhyMMrBhyUQh5EXe2U25iFM7HRxhtV2fdYQmNcbCsbir6FoNjFi8wiQCopGVthkN3oZFftEK7";
-      // "CqKyKSG7xpAsuSF12MLSzYx19CiNZBxhc6GuG9cpUx6TwZSsaSumtCjt97Hc3KV6up8MmHp4eELWRAbo2pGffms"; //手动套利(Priority fee+高额fee+反而亏钱)
-      // "CMkjuKkAtgUhyfzBqrVFg7FmDZvceDG1Ak5z6wEPv2kpgD2RzPDWpgP2DGRzDFC7n8cLDUTReaqgswwuA57ru9U"; //amm
-      //cpmm
-      // "3NZt3syTpsY74Dq8Y5sMn2v9k9qsqJSchVM25eB8ULD6SrHNxQGMtAEXSV8T5FWZjP5ojo65BJPtSPgNLSZGiB7r"; //+meteora dlmm
+    // "4E33agBR1ia9Dp8iKNfiHv4kmX4uWvPuug16uHqqKwpwaEu9JnfrynWuqi2BRD9EvLXxE3JB6r3cbVG6yTMuQQNt"; // two hop swap
+    // "2Sw1hpNVNoGbmoLD2ULYD6rDbMztpRozZvRXteb3B4cUjzfoxC6L6gPiS4Phoz2EnpwQGLebRadWDY6FvjtvgUm4"; // two hop swap v2
 
-      //meteora
-      // "bEESzTQw7L5RaZQAKK2U71f44wjWQQ9mwdFrBE6WuLESLrdZ3UJT2Fubq7ayKoSEwWYib4NKpoeKoHVJ4hHzV9V"; // pool program+dlmm 有趣
-      "4FgSEC8WS49J7QG8u2xyC8SNWPBNrmgiZAKFR5VdTJ8ww2J6HTQs5zeotL7undCt9x1ZTYbq9avPfM854BaKUkqj"; // pool program+damm v2
+    //raydium
+    // "dTLhNajxmKk5XxKhyMMrBhyUQh5EXe2U25iFM7HRxhtV2fdYQmNcbCsbir6FoNjFi8wiQCopGVthkN3oZFftEK7";
+    // "CqKyKSG7xpAsuSF12MLSzYx19CiNZBxhc6GuG9cpUx6TwZSsaSumtCjt97Hc3KV6up8MmHp4eELWRAbo2pGffms"; //手动套利(Priority fee+高额fee+反而亏钱)
+    // "CMkjuKkAtgUhyfzBqrVFg7FmDZvceDG1Ak5z6wEPv2kpgD2RzPDWpgP2DGRzDFC7n8cLDUTReaqgswwuA57ru9U"; //amm
+    //cpmm
+    // "3NZt3syTpsY74Dq8Y5sMn2v9k9qsqJSchVM25eB8ULD6SrHNxQGMtAEXSV8T5FWZjP5ojo65BJPtSPgNLSZGiB7r"; //+meteora dlmm
+
+    //meteora
+    // "bEESzTQw7L5RaZQAKK2U71f44wjWQQ9mwdFrBE6WuLESLrdZ3UJT2Fubq7ayKoSEwWYib4NKpoeKoHVJ4hHzV9V"; // pool program+dlmm 有趣
+    // "4FgSEC8WS49J7QG8u2xyC8SNWPBNrmgiZAKFR5VdTJ8ww2J6HTQs5zeotL7undCt9x1ZTYbq9avPfM854BaKUkqj"; // pool program+damm v2
 
     //pumpfun
     // "Ax2HVF3GAtzu1SthhSLF2AhVKJFRME7fYMcb1zQpCxu5UbzCfvjFzUgvXtQULYopLGLw5xupVbco8WdPZB12w5c"; //amm

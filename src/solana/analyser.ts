@@ -87,7 +87,7 @@ export class TransactionAnalyzer {
           );
         }
 
-        const swapEvent = this.swapParser.parseSolanaSwapEvent(
+        const swapEventResult = this.swapParser.parseSolanaSwapEvent(
           {
             dexProgram,
             dexProgramInfo,
@@ -97,8 +97,13 @@ export class TransactionAnalyzer {
           changedTokenMetas,
           instruction.type // inner instruction index
         );
-        if (swapEvent) {
-          swapEvents.push(swapEvent);
+
+        if (swapEventResult) {
+          if (Array.isArray(swapEventResult)) {
+            swapEvents.push(...swapEventResult);
+          } else {
+            swapEvents.push(swapEventResult);
+          }
         }
 
         // (deprecated) account could be pool
@@ -106,47 +111,58 @@ export class TransactionAnalyzer {
         //   (account) =>
         //     !tokenAccounts.find((t) => t.addr === account.toBase58())
         // );
-        const poolAddress = swapEvent?.poolAddress;
 
-        if (poolAddress) {
-          let tokenIn;
-          let tokenOut;
-          if (instruction.type === "inner") {
-            tokenIn = changedTokenMetas.find(
-              (account) => account.mint === swapEvent.tokenIn
-            );
-            tokenOut = changedTokenMetas.find(
-              (account) => account.mint === swapEvent.tokenOut
-            );
-          } else {
-            tokenIn = changedTokenMetas.find(
-              (transfer) => transfer.source === swapEvent.sender
-            );
-            tokenOut = changedTokenMetas.find(
-              (transfer) => transfer.destination === swapEvent.recipient
-            );
-            if (!tokenIn || !tokenOut) {
-              console.log("swapEvent: ", swapEvent);
-              console.log("changedTokenMetas: ", changedTokenMetas);
-              console.log("tokenIn: ", tokenIn);
-              console.log("tokenOut: ", tokenOut);
+        // handle pool analysis for multi swap
+        const swapEventsToAnalyze = Array.isArray(swapEventResult)
+          ? swapEventResult
+          : swapEventResult
+          ? [swapEventResult]
+          : [];
+
+        for (const swapEvent of swapEventsToAnalyze) {
+          if (swapEvent && swapEvent.poolAddress) {
+            let tokenIn;
+            let tokenOut;
+
+            if (instruction.type === "inner") {
+              tokenIn = changedTokenMetas.find(
+                (account) => account.mint === swapEvent.tokenIn
+              );
+              tokenOut = changedTokenMetas.find(
+                (account) => account.mint === swapEvent.tokenOut
+              );
+            } else {
+              tokenIn = changedTokenMetas.find(
+                (transfer) => transfer.source === swapEvent.sender
+              );
+              tokenOut = changedTokenMetas.find(
+                (transfer) => transfer.destination === swapEvent.recipient
+              );
+              if (!tokenIn || !tokenOut) {
+                console.log("swapEvent: ", swapEvent);
+                console.log("changedTokenMetas: ", changedTokenMetas);
+                console.log("tokenIn: ", tokenIn);
+                console.log("tokenOut: ", tokenOut);
+              }
             }
-          }
 
-          const poolInfo = await this.poolManager.requestTxPoolInfo(
-            dexProgramInfo,
-            poolAddress,
-            tokenIn!,
-            tokenOut!,
-            tx.transaction.signatures[0] || ""
-          );
-          if (poolInfo) {
-            involvedPools.add(poolAddress);
-            const previousTxs = previousTransactions.get(poolAddress);
-            if (previousTxs && previousTxs.length > 0) {
-              const lastTx = previousTxs[previousTxs.length - 1];
-              if (lastTx) {
-                previousPoolTxs.set(poolAddress, lastTx);
+            const poolInfo = await this.poolManager.requestTxPoolInfo(
+              dexProgramInfo,
+              swapEvent.poolAddress,
+              tokenIn!,
+              tokenOut!,
+              tx.transaction.signatures[0] || ""
+            );
+            if (poolInfo) {
+              involvedPools.add(swapEvent.poolAddress);
+              const previousTxs = previousTransactions.get(
+                swapEvent.poolAddress
+              );
+              if (previousTxs && previousTxs.length > 0) {
+                const lastTx = previousTxs[previousTxs.length - 1];
+                if (lastTx) {
+                  previousPoolTxs.set(swapEvent.poolAddress, lastTx);
+                }
               }
             }
           }

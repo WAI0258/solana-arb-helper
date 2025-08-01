@@ -5,6 +5,22 @@ import {
   buildSwapEvent,
 } from "./utility";
 
+const DLMM_DISCRIMINATORS = {
+  swap: [248, 198, 158, 145, 225, 117, 135, 200],
+  swapExactOut: [250, 73, 101, 33, 38, 207, 75, 184],
+  swap2: [65, 75, 63, 76, 235, 91, 91, 136],
+  swapExactOut2: [43, 215, 247, 132, 137, 60, 243, 81],
+};
+
+const DAMM_DISCRIMINATOR = [248, 198, 158, 145, 225, 117, 135, 200];
+const DBC_DISCRIMINATOR = [248, 198, 158, 145, 225, 117, 135, 200];
+
+const ACCOUNT_INDICES = {
+  damm: [0, 1, 2, 5, 6],
+  damm_v2: [1, 2, 3, 4, 5],
+  dbc: [2, 3, 4, 6, 5],
+};
+
 export class MeteoraSwapParser {
   parseSwap(
     instructionData: Buffer,
@@ -48,6 +64,7 @@ export class MeteoraSwapParser {
         return null;
     }
   }
+
   private parseDLMMSwap(
     instructionData: Buffer,
     accounts: any[],
@@ -56,30 +73,24 @@ export class MeteoraSwapParser {
   ): StandardSwapEvent | null {
     try {
       const discriminator = Array.from(instructionData.slice(0, 8));
-      const expectedDiscriminator = {
-        swap: [248, 198, 158, 145, 225, 117, 135, 200],
-        swapExactOut: [250, 73, 101, 33, 38, 207, 75, 184],
-        swap2: [65, 75, 63, 76, 235, 91, 91, 136],
-        swapExactOut2: [43, 215, 247, 132, 137, 60, 243, 81],
-      };
 
-      let type = "";
+      let protocol: string;
       if (
-        isValidDiscriminator(discriminator, expectedDiscriminator.swapExactOut)
+        isValidDiscriminator(discriminator, DLMM_DISCRIMINATORS.swapExactOut)
       ) {
-        type = "SWAP_EXACT_OUT";
+        protocol = "SWAP_EXACT_OUT";
       } else if (
-        isValidDiscriminator(discriminator, expectedDiscriminator.swap)
+        isValidDiscriminator(discriminator, DLMM_DISCRIMINATORS.swap)
       ) {
-        type = "SWAP";
+        protocol = "SWAP";
       } else if (
-        isValidDiscriminator(discriminator, expectedDiscriminator.swapExactOut2)
+        isValidDiscriminator(discriminator, DLMM_DISCRIMINATORS.swapExactOut2)
       ) {
-        type = "SWAP_EXACT_OUT_2";
+        protocol = "SWAP_EXACT_OUT_2";
       } else if (
-        isValidDiscriminator(discriminator, expectedDiscriminator.swap2)
+        isValidDiscriminator(discriminator, DLMM_DISCRIMINATORS.swap2)
       ) {
-        type = "SWAP_2";
+        protocol = "SWAP_2";
       } else {
         return null;
       }
@@ -92,13 +103,7 @@ export class MeteoraSwapParser {
           : 3;
       const outofVaultIndex = intoVaultIndex === 2 ? 3 : 2;
 
-      const {
-        poolAddress,
-        inputTokenAccount,
-        outputTokenAccount,
-        intoVault,
-        outofVault,
-      } = extractAccountInfo(accounts, [
+      const accountInfo = extractAccountInfo(accounts, [
         0,
         4,
         5,
@@ -107,12 +112,12 @@ export class MeteoraSwapParser {
       ]);
 
       return buildSwapEvent(
-        poolAddress,
-        "METEORA_DLMM_" + type,
-        intoVault,
-        outofVault,
-        inputTokenAccount,
-        outputTokenAccount,
+        accountInfo.poolAddress,
+        "METEORA_DLMM_" + protocol,
+        accountInfo.intoVault,
+        accountInfo.outofVault,
+        accountInfo.inputTokenAccount,
+        accountInfo.outputTokenAccount,
         changedTokenMetas,
         instructionType
       );
@@ -131,14 +136,12 @@ export class MeteoraSwapParser {
   ): StandardSwapEvent | null {
     try {
       const discriminator = Array.from(instructionData.slice(0, 8));
-      const expectedDiscriminator = [248, 198, 158, 145, 225, 117, 135, 200];
-      if (!isValidDiscriminator(discriminator, expectedDiscriminator)) {
+      if (!isValidDiscriminator(discriminator, DAMM_DISCRIMINATOR)) {
         return null;
       }
-      let candidateIndices = [0, 1, 2, 5, 6];
-      if (dexType === "DAMM_V2") {
-        candidateIndices = [1, 2, 3, 4, 5];
-      }
+
+      const candidateIndices =
+        dexType === "DAMM_V2" ? ACCOUNT_INDICES.damm_v2 : ACCOUNT_INDICES.damm;
 
       const intoVaultIndex =
         changedTokenMetas.find(
@@ -153,13 +156,8 @@ export class MeteoraSwapParser {
         intoVaultIndex === candidateIndices[3]!
           ? candidateIndices[4]!
           : candidateIndices[3]!;
-      const {
-        poolAddress,
-        inputTokenAccount,
-        outputTokenAccount,
-        intoVault,
-        outofVault,
-      } = extractAccountInfo(accounts, [
+
+      const accountInfo = extractAccountInfo(accounts, [
         candidateIndices[0]!,
         candidateIndices[1]!,
         candidateIndices[2]!,
@@ -168,12 +166,12 @@ export class MeteoraSwapParser {
       ]);
 
       return buildSwapEvent(
-        poolAddress,
+        accountInfo.poolAddress,
         "METEORA_" + dexType + "_SWAP",
-        intoVault,
-        outofVault,
-        inputTokenAccount,
-        outputTokenAccount,
+        accountInfo.intoVault,
+        accountInfo.outofVault,
+        accountInfo.inputTokenAccount,
+        accountInfo.outputTokenAccount,
         changedTokenMetas,
         instructionType
       );
@@ -189,27 +187,27 @@ export class MeteoraSwapParser {
     changedTokenMetas: any[],
     instructionType: string
   ): StandardSwapEvent | null {
-    const discriminator = Array.from(instructionData.slice(0, 8));
-    const expectedDiscriminator = [248, 198, 158, 145, 225, 117, 135, 200];
-    if (!isValidDiscriminator(discriminator, expectedDiscriminator)) {
+    try {
+      const discriminator = Array.from(instructionData.slice(0, 8));
+      if (!isValidDiscriminator(discriminator, DBC_DISCRIMINATOR)) {
+        return null;
+      }
+
+      const accountInfo = extractAccountInfo(accounts, ACCOUNT_INDICES.dbc);
+
+      return buildSwapEvent(
+        accountInfo.poolAddress,
+        "METEORA_DBC_SWAP",
+        accountInfo.intoVault,
+        accountInfo.outofVault,
+        accountInfo.inputTokenAccount,
+        accountInfo.outputTokenAccount,
+        changedTokenMetas,
+        instructionType
+      );
+    } catch (error) {
+      console.error("Error parsing Meteora DBC swap:", error);
       return null;
     }
-    const {
-      poolAddress,
-      inputTokenAccount,
-      outputTokenAccount,
-      intoVault,
-      outofVault,
-    } = extractAccountInfo(accounts, [2, 3, 4, 6, 5]);
-    return buildSwapEvent(
-      poolAddress,
-      "METEORA_DBC_SWAP",
-      intoVault,
-      outofVault,
-      inputTokenAccount,
-      outputTokenAccount,
-      changedTokenMetas,
-      instructionType
-    );
   }
 }

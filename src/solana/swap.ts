@@ -12,7 +12,7 @@ export class SwapParser {
     accounts: any[],
     changedTokenMetas: any[],
     instructionType: string
-  ): StandardSwapEvent | null {
+  ): StandardSwapEvent | StandardSwapEvent[] | null {
     try {
       const parser = SwapParserFactory.getParser(dexProgram.dexProgram);
       if (!parser) {
